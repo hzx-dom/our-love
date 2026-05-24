@@ -876,7 +876,8 @@ body{
 var CFG = {
   boy:'男孩',girl:'女孩',boyBirth:'2006-10-31',girlBirth:'2006-10-17',
   anniversary:'2025-09-21',song:'就是爱你 - 陶喆',songUrl:'',songLyrics:'',
-  firstMeet:'学校图书馆',importantDates:[]
+  firstMeet:'学校图书馆',importantDates:[],
+  cloudAppId:'',cloudAppKey:'',cloudEnable:false
 };
 var SK = 'love_data_v3';
 
@@ -1162,9 +1163,15 @@ function closeLet(){document.getElementById('letModal').classList.add('hidden');
 function rInfo(){
   var c=document.getElementById('infoC'),n=new Date(),a=new Date(D.cfg.anniversary),td=db(a,n);
   var bb=nbd(D.cfg.boyBirth),gb=nbd(D.cfg.girlBirth),bd_=db(n,bb),gd_=db(n,gb);
-  c.innerHTML=[{icon:'💍',label:'纪念日',value:fd(D.cfg.anniversary)+' · '+td+' 天',key:'anniversary'},{icon:'🤵',label:'你的名字',value:D.cfg.boy,key:'boy'},{icon:'👰',label:'TA的名字',value:D.cfg.girl,key:'girl'},{icon:'🎂',label:'你的生日',value:fd(D.cfg.boyBirth)+(bd_===0?' 🎉':' · '+bd_+'天'),key:'boyBirth'},{icon:'🎂',label:'TA的生日',value:fd(D.cfg.girlBirth)+(gd_===0?' 🎉':' · '+gd_+'天'),key:'girlBirth'},{icon:'🎵',label:'我们的歌',value:D.cfg.song,key:'song'},{icon:'🔗',label:'歌曲链接',value:D.cfg.songUrl||'未设置(MP3直链)',key:'songUrl'},{icon:'📝',label:'歌曲歌词',value:(D.cfg.songLyrics||'未设置')+' (点击编辑)',key:'songLyricsTL'},{icon:'📍',label:'第一次见面的地方',value:D.cfg.firstMeet,key:'firstMeet'}].map(function(f){return'<div class="info-card" onclick="eInfo(\''+f.key+'\',\''+f.label+'\')"><span class="ii">'+f.icon+'</span><div><div class="il">'+f.label+'</div><div class="iv">'+eh(f.value)+'</div></div></div>'}).join('')
+  c.innerHTML=[{icon:'💍',label:'纪念日',value:fd(D.cfg.anniversary)+' · '+td+' 天',key:'anniversary'},{icon:'🤵',label:'你的名字',value:D.cfg.boy,key:'boy'},{icon:'👰',label:'TA的名字',value:D.cfg.girl,key:'girl'},{icon:'🎂',label:'你的生日',value:fd(D.cfg.boyBirth)+(bd_===0?' 🎉':' · '+bd_+'天'),key:'boyBirth'},{icon:'🎂',label:'TA的生日',value:fd(D.cfg.girlBirth)+(gd_===0?' 🎉':' · '+gd_+'天'),key:'girlBirth'},{icon:'🎵',label:'我们的歌',value:D.cfg.song,key:'song'},{icon:'🔗',label:'歌曲链接',value:D.cfg.songUrl||'未设置(MP3直链)',key:'songUrl'},{icon:'📝',label:'歌曲歌词',value:(D.cfg.songLyrics||'未设置')+' (点击编辑)',key:'songLyricsTL'},{icon:'📍',label:'第一次见面的地方',value:D.cfg.firstMeet,key:'firstMeet'},{icon:'☁️',label:'云端同步',value:D.cfg.cloudEnable?'✅ 已开启':'❌ 未开启 (点击设置)',key:'cloudSetup'}].map(function(f){return'<div class="info-card" onclick="eInfo(\''+f.key+'\',\''+f.label+'\')"><span class="ii">'+f.icon+'</span><div><div class="il">'+f.label+'</div><div class="iv">'+eh(f.value)+'</div></div></div>'}).join('')
 }
 function eInfo(key,label){
+  if(key==='cloudSetup'){
+    if(D.cfg.cloudEnable){if(confirm('关闭云端同步？')){D.cfg.cloudEnable=false;ps();rInfo();ts('☁️ 同步已关闭')}return}
+    var id=prompt('输入 LeanCloud AppID：');if(!id||!id.trim())return;
+    var key=prompt('输入 LeanCloud AppKey：');if(!key||!key.trim())return;
+    enableCloud(id.trim(),key.trim());rInfo();return
+  }
   if(key==='songLyricsTL'){setLyrics();return}
   var v=prompt('编辑 '+label+'：',D.cfg[key]||'');if(v!==null){D.cfg[key]=v.trim();ps();rInfo();upHome();upTimer();ts('✅ 已更新')}
 }
@@ -1291,6 +1298,48 @@ function showSurprise(){
   }
 }
 function startSurprises(){clearInterval(sTimer);sTimer=setInterval(function(){if(!document.hidden)showSurprise()},90000+Math.random()*120000)}
+
+// ===== CLOUD SYNC (LeanCloud) =====
+var cloudObjId=null,cloudVer=0,localVer=0,syncing=false;
+function cloudApi(method,path,body){
+  if(!D.cfg.cloudAppId||!D.cfg.cloudAppKey)return Promise.reject('not configured');
+  return fetch('https://'+D.cfg.cloudAppId+'.api.lncldglobal.com/1.1'+path,{
+    method:method,headers:{'X-LC-Id':D.cfg.cloudAppId,'X-LC-Key':D.cfg.cloudAppKey,'Content-Type':'application/json'},
+    body:body?JSON.stringify(body):undefined
+  }).then(function(r){return r.json()});
+}
+function enableCloud(id,key){
+  D.cfg.cloudAppId=id;D.cfg.cloudAppKey=key;D.cfg.cloudEnable=true;ps();
+  // Initialize cloud object
+  cloudApi('POST','/classes/SyncData',{data:JSON.stringify(D),ver:1,updatedAt:new Date().toISOString()}).then(function(r){
+    if(r.objectId){cloudObjId=r.objectId;cloudVer=1;localVer=1;ts('☁️ 云端同步已开启')}
+  }).catch(function(){ts('⚠️ 云端连接失败，检查ID和Key');D.cfg.cloudEnable=false;ps()});
+}
+function pushToCloud(){
+  if(!D.cfg.cloudEnable||!cloudObjId||syncing)return;
+  syncing=true;localVer++;var v=localVer;
+  cloudApi('PUT','/classes/SyncData/'+cloudObjId,{data:JSON.stringify(D),ver:v,updatedAt:new Date().toISOString()}).then(function(){
+    cloudVer=v;syncing=false;
+  }).catch(function(){localVer--;syncing=false});
+}
+function pullFromCloud(){
+  if(!D.cfg.cloudEnable||!cloudObjId||syncing)return;
+  syncing=true;
+  cloudApi('GET','/classes/SyncData/'+cloudObjId).then(function(r){
+    syncing=false;
+    if(r.ver&&r.ver>cloudVer&&r.data){
+      try{var nd=JSON.parse(r.data);if(nd.cfg&&nd.memories){D=nd;cloudVer=r.ver;localVer=r.ver;ps();refreshAll();ts('☁️ 数据已同步')}}
+      catch(e){}
+    }
+  }).catch(function(){syncing=false});
+}
+function refreshAll(){upHome();upTimer();rImpD();rMiniCal();rTL();rPht();rMap();rWish();rLet();rInfo();rNav()}
+// Auto sync
+setInterval(function(){
+  if(D.cfg.cloudEnable&&cloudObjId&&document.visibilityState==='visible')pullFromCloud();
+},15000);
+// Push on data change (called after every persist)
+var _origPs=ps;ps=function(){_origPs();if(D.cfg.cloudEnable&&cloudObjId)setTimeout(pushToCloud,500)};
 
 // ===== DATA SYNC =====
 function expData(){
