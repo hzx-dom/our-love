@@ -828,6 +828,15 @@ body{
     <button class="btn btn-1 btn-s" onclick="addPin()">📍 标记足迹</button>
   </div>
   <div style="text-align:center;font-size:.65rem;color:var(--text-l);margin-top:4px">在地图上标记一起去过的地方</div>
+  <div class="bcard" style="margin-top:14px;text-align:center">
+    <div style="font-size:.78rem;font-weight:700;margin-bottom:6px">🔄 数据同步</div>
+    <div style="font-size:.6rem;color:var(--text-l);margin-bottom:8px">不同设备间同步回忆</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+      <button class="btn btn-1 btn-s" onclick="expData()">📤 导出</button>
+      <button class="btn btn-2 btn-s" onclick="impData()">📥 导入</button>
+      <button class="btn btn-2 btn-s" onclick="copySync()">🔗 复制同步码</button>
+    </div>
+  </div>
 </section>
 
 <!-- ===== WISHES ===== -->
@@ -1282,6 +1291,40 @@ function showSurprise(){
   }
 }
 function startSurprises(){clearInterval(sTimer);sTimer=setInterval(function(){if(!document.hidden)showSurprise()},90000+Math.random()*120000)}
+
+// ===== DATA SYNC =====
+function expData(){
+  var blob=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='our-love-backup-'+new Date().toISOString().split('T')[0]+'.json';
+  a.click();ts('📤 数据已导出')
+}
+function impData(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();r.onload=function(ev){
+      try{
+        var nd=JSON.parse(ev.target.result);
+        if(!nd.cfg||!nd.memories){ts('⚠️ 文件格式不对');return}
+        if(confirm('导入将覆盖当前数据，确定吗？')){localStorage.setItem(SK,ev.target.result);location.reload()}
+      }catch(err){ts('⚠️ 文件损坏')}
+    };r.readAsText(f)
+  };inp.click()
+}
+function copySync(){
+  var code=btoa(encodeURIComponent(JSON.stringify(D))).replace(/=/g,'').slice(0,200);
+  if(navigator.clipboard){navigator.clipboard.writeText(code).then(function(){ts('🔗 同步码已复制！在另一设备点导入粘贴')})}
+  else{prompt('复制这段同步码，在另一设备粘贴：',code);ts('📋 请复制上面的同步码')}
+}
+// Auto-detect sync code in clipboard on import
+function impSyncCode(){
+  var code=prompt('粘贴同步码：');if(!code||!code.trim())return;
+  try{var raw=decodeURIComponent(atob(code+'==='));var nd=JSON.parse(raw);
+    if(!nd.cfg||!nd.memories){ts('⚠️ 同步码无效');return}
+    if(confirm('导入将覆盖当前数据，确定吗？')){localStorage.setItem(SK,JSON.stringify(nd));location.reload()}
+  }catch(e){ts('⚠️ 同步码无效或已过期')}
+}
 
 document.addEventListener('DOMContentLoaded',function(){init();initMusic();initParticles();startSurprises()});
 </script>
