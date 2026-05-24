@@ -34,7 +34,10 @@
       "Bash(kill -9 347 335 354 301)",
       "Bash(curl -s http://localhost:8080/api/sync)",
       "Bash(curl -s -X POST -H \"Content-Type: application/json\" -d '{\"ver\":123,\"data\":\"test\"}' http://localhost:8080/api/sync)",
-      "Bash(start \"\" \"http://localhost:8080\")"
+      "Bash(start \"\" \"http://localhost:8080\")",
+      "Bash(curl -s -X POST -H \"Content-Type: application/json\" -d '{\"ver\":999,\"data\":\"{\\\\\"cfg\\\\\":{\\\\\"boy\\\\\":\\\\\"测试男孩\\\\\"},\\\\\"memories\\\\\":[{\\\\\"title\\\\\":\\\\\"同步测试\\\\\"}]}\"}' http://localhost:8080/api/sync)",
+      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" gist create --public --desc \"恋爱网站同步数据\" \"C:/Users/Lenovo/OneDrive/桌面/爱/cloud_data.json\")",
+      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" api -X POST /authorizations -f \"scopes[]=gist\" -f \"note=恋爱网站同步\")"
     ]
   }
 }

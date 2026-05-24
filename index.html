@@ -1163,14 +1163,12 @@ function closeLet(){document.getElementById('letModal').classList.add('hidden');
 function rInfo(){
   var c=document.getElementById('infoC'),n=new Date(),a=new Date(D.cfg.anniversary),td=db(a,n);
   var bb=nbd(D.cfg.boyBirth),gb=nbd(D.cfg.girlBirth),bd_=db(n,bb),gd_=db(n,gb);
-  c.innerHTML=[{icon:'💍',label:'纪念日',value:fd(D.cfg.anniversary)+' · '+td+' 天',key:'anniversary'},{icon:'🤵',label:'你的名字',value:D.cfg.boy,key:'boy'},{icon:'👰',label:'TA的名字',value:D.cfg.girl,key:'girl'},{icon:'🎂',label:'你的生日',value:fd(D.cfg.boyBirth)+(bd_===0?' 🎉':' · '+bd_+'天'),key:'boyBirth'},{icon:'🎂',label:'TA的生日',value:fd(D.cfg.girlBirth)+(gd_===0?' 🎉':' · '+gd_+'天'),key:'girlBirth'},{icon:'🎵',label:'我们的歌',value:D.cfg.song,key:'song'},{icon:'🔗',label:'歌曲链接',value:D.cfg.songUrl||'未设置(MP3直链)',key:'songUrl'},{icon:'📝',label:'歌曲歌词',value:(D.cfg.songLyrics||'未设置')+' (点击编辑)',key:'songLyricsTL'},{icon:'📍',label:'第一次见面的地方',value:D.cfg.firstMeet,key:'firstMeet'},{icon:'☁️',label:'云端同步',value:D.cfg.cloudEnable?'✅ 已开启':'❌ 未开启 (点击设置)',key:'cloudSetup'}].map(function(f){return'<div class="info-card" onclick="eInfo(\''+f.key+'\',\''+f.label+'\')"><span class="ii">'+f.icon+'</span><div><div class="il">'+f.label+'</div><div class="iv">'+eh(f.value)+'</div></div></div>'}).join('')
+  c.innerHTML=[{icon:'💍',label:'纪念日',value:fd(D.cfg.anniversary)+' · '+td+' 天',key:'anniversary'},{icon:'🤵',label:'你的名字',value:D.cfg.boy,key:'boy'},{icon:'👰',label:'TA的名字',value:D.cfg.girl,key:'girl'},{icon:'🎂',label:'你的生日',value:fd(D.cfg.boyBirth)+(bd_===0?' 🎉':' · '+bd_+'天'),key:'boyBirth'},{icon:'🎂',label:'TA的生日',value:fd(D.cfg.girlBirth)+(gd_===0?' 🎉':' · '+gd_+'天'),key:'girlBirth'},{icon:'🎵',label:'我们的歌',value:D.cfg.song,key:'song'},{icon:'🔗',label:'歌曲链接',value:D.cfg.songUrl||'未设置(MP3直链)',key:'songUrl'},{icon:'📝',label:'歌曲歌词',value:(D.cfg.songLyrics||'未设置')+' (点击编辑)',key:'songLyricsTL'},{icon:'📍',label:'第一次见面的地方',value:D.cfg.firstMeet,key:'firstMeet'},{icon:'☁️',label:'云端同步',value:syncToken?'✅ 已开启 (双方实时同步)':'❌ 未开启 (点击设置)',key:'cloudSetup'}].map(function(f){return'<div class="info-card" onclick="eInfo(\''+f.key+'\',\''+f.label+'\')"><span class="ii">'+f.icon+'</span><div><div class="il">'+f.label+'</div><div class="iv">'+eh(f.value)+'</div></div></div>'}).join('')
 }
 function eInfo(key,label){
   if(key==='cloudSetup'){
-    if(D.cfg.cloudEnable){if(confirm('关闭云端同步？')){D.cfg.cloudEnable=false;ps();rInfo();ts('☁️ 同步已关闭')}return}
-    var id=prompt('输入 LeanCloud AppID：');if(!id||!id.trim())return;
-    var key=prompt('输入 LeanCloud AppKey：');if(!key||!key.trim())return;
-    enableCloud(id.trim(),key.trim());rInfo();return
+    if(syncToken){if(confirm('关闭云端同步？'))disableSync()}else{setSyncToken()}
+    return
   }
   if(key==='songLyricsTL'){setLyrics();return}
   var v=prompt('编辑 '+label+'：',D.cfg[key]||'');if(v!==null){D.cfg[key]=v.trim();ps();rInfo();upHome();upTimer();ts('✅ 已更新')}
@@ -1298,6 +1296,48 @@ function showSurprise(){
   }
 }
 function startSurprises(){clearInterval(sTimer);sTimer=setInterval(function(){if(!document.hidden)showSurprise()},90000+Math.random()*120000)}
+
+// ===== GITHUB GIST CLOUD SYNC =====
+// Both devices read/write to the same GitHub Gist - works on any network!
+var GIST_ID='b66c3036db374de80808fac1646d6529';
+var GIST_RAW='https://gist.githubusercontent.com/hzx-dom/'+GIST_ID+'/raw/cloud_data.json';
+var GIST_API='https://api.github.com/gists/'+GIST_ID;
+var syncToken=localStorage.getItem('love_sync_token')||'';
+var gistVer=0,localV=0,gistSyncTimer=null;
+
+function initSync(){
+  if(!syncToken)return; // No token configured yet
+  // Load from Gist
+  fetch(GIST_RAW+'?t='+Date.now()).then(function(r){return r.json()}).then(function(d){
+    if(d&&d.ver&&d.data&&d.ver>localV){
+      try{var nd=JSON.parse(d.data);if(nd.cfg&&nd.memories){D=nd;ps();refreshAll();gistVer=d.ver;localV=d.ver;ts('☁️ 数据已同步')}}catch(e){}
+    }
+  }).catch(function(){});
+  // Auto-sync every 10 seconds
+  gistSyncTimer=setInterval(pullFromGist,10000);
+  // Push on changes
+  var _ops=ps;ps=function(){_ops();setTimeout(pushToGist,500)};
+}
+function pullFromGist(){
+  if(!syncToken||document.hidden)return;
+  fetch(GIST_RAW+'?t='+Date.now()).then(function(r){return r.json()}).then(function(d){
+    if(d&&d.ver&&d.data&&d.ver>gistVer){
+      try{var nd=JSON.parse(d.data);if(nd.cfg&&nd.memories){D=nd;ps();refreshAll();gistVer=d.ver;localV=d.ver;console.log('☁️ Synced from cloud')}}catch(e){}
+    }
+  }).catch(function(){});
+}
+function pushToGist(){
+  if(!syncToken)return;
+  localV++;var v=localV;
+  fetch(GIST_API,{method:'PATCH',headers:{'Authorization':'token '+syncToken,'Content-Type':'application/json'},body:JSON.stringify({files:{'cloud_data.json':{content:JSON.stringify({ver:v,data:JSON.stringify(D)})}}})}).then(function(){
+    gistVer=v;
+  }).catch(function(){localV--});
+}
+function setSyncToken(){
+  var t=prompt('输入GitHub Token实现云端同步：\n\n如何获取：\n1. 打开 github.com/settings/tokens\n2. 点击 Generate new token (classic)\n3. 勾选 gist 权限\n4. 复制生成的token','');
+  if(t&&t.trim()){syncToken=t.trim();localStorage.setItem('love_sync_token',syncToken);initSync();ts('☁️ 云端同步已开启！');rInfo()}
+}
+function disableSync(){syncToken='';localStorage.removeItem('love_sync_token');clearInterval(gistSyncTimer);ts('☁️ 同步已关闭');rInfo()}
 
 // ===== LOCAL SERVER SYNC =====
 // When connected to the computer's server, auto-sync data
