@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start \"\" \"c:/Users/Lenovo/OneDrive/桌面/爱/index.html\")",
+      "Bash(node -e ' *)",
+      "Bash(git init *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git config *)",
+      "Bash(gh auth *)",
+      "Bash(winget install *)",
+      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" auth status)",
+      "Bash(where gh *)",
+      "Read(//c/Program Files/GitHub CLI/**)",
+      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" auth login --hostname github.com --web)",
+      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" repo create \"our-love\" --public --source=. --remote=origin --push)",
+      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" api -X POST /repos/hzx-dom/our-love/pages -f \"source[branch]=main\" -f \"source[path]=/\")",
+      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" api repos/hzx-dom/our-love/pages -X POST -f \"source[branch]=main\" -f \"source[path]=/\")",
+      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" api repos/hzx-dom/our-love/pages/builds/latest)",
+      "Bash(git push *)",
+      "Bash(\"C:/Program Files/GitHub CLI/gh.exe\" auth token)",
+      "Bash(npm install *)",
+      "Bash(python -m http.server 8080)",
+      "Bash(ipconfig)",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(python server.py 8080)",
+      "Bash(cd /d \"c:\\\\Users\\\\Lenovo\\\\OneDrive\\\\桌面\\\\爱\")",
+      "Bash(curl -s http://localhost:8080/api/health)",
+      "Bash(python \"c:/Users/Lenovo/OneDrive/桌面/爱/server.py\" 8080)",
+      "Bash(cmd.exe /c \"for %A in \\(\\\\\"c:\\\\Users\\\\Lenovo\\\\OneDrive\\\\桌面\\\\爱\\\\\"\\) do @echo %~sA\")",
+      "Bash(python \"C:/Users/Lenovo/OneDrive/桌面/爱/server.py\" 8080)",
+      "Bash(tasklist)",
+      "Bash(kill -9 347 335 354 301)",
+      "Bash(curl -s http://localhost:8080/api/sync)",
+      "Bash(curl -s -X POST -H \"Content-Type: application/json\" -d '{\"ver\":123,\"data\":\"test\"}' http://localhost:8080/api/sync)",
+      "Bash(start \"\" \"http://localhost:8080\")"
+    ]
+  }
+}

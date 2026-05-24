@@ -1299,6 +1299,27 @@ function showSurprise(){
 }
 function startSurprises(){clearInterval(sTimer);sTimer=setInterval(function(){if(!document.hidden)showSurprise()},90000+Math.random()*120000)}
 
+// ===== LOCAL SERVER SYNC =====
+// When connected to the computer's server, auto-sync data
+var syncUrl='',syncTimer=null;
+function initSync(){
+  // Detect if running on the Python server
+  var h=window.location.hostname;
+  if(h!=='localhost'&&h.indexOf('192.168.')!==0&&h.indexOf('127.0.0.1')!==0)return; // Not on our server
+  syncUrl=window.location.protocol+'//'+window.location.host+'/api/sync';
+  // Load from server
+  fetch(syncUrl).then(function(r){return r.json()}).then(function(d){
+    if(d&&d.data){try{var nd=JSON.parse(d.data);if(nd.cfg&&nd.memories){D=nd;ps();refreshAll();console.log('☁️ 从服务器加载数据')}}catch(e){}}
+  }).catch(function(){});
+  // Auto-sync every 5 seconds
+  syncTimer=setInterval(function(){if(!document.hidden)pushToServer()},5000);
+  // Push on changes
+  var _ops=ps;ps=function(){_ops();setTimeout(pushToServer,300)};
+}
+function pushToServer(){
+  if(!syncUrl)return;
+  fetch(syncUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ver:Date.now(),data:JSON.stringify(D)})}).catch(function(){});
+}
 // ===== CLOUD SYNC (LeanCloud) =====
 var cloudObjId=null,cloudVer=0,localVer=0,syncing=false;
 function cloudApi(method,path,body){
@@ -1375,7 +1396,7 @@ function impSyncCode(){
   }catch(e){ts('⚠️ 同步码无效或已过期')}
 }
 
-document.addEventListener('DOMContentLoaded',function(){init();initMusic();initParticles();startSurprises()});
+document.addEventListener('DOMContentLoaded',function(){init();initMusic();initParticles();startSurprises();initSync()});
 </script>
 </body>
 </html>
