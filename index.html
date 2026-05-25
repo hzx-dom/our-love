@@ -887,7 +887,6 @@ body{
 
 <script>
 // ===== CONFIG =====
-var MAX_GIST = 900000; // Gist限制~1MB，留安全余量
 var CFG = {
   boy:'吴潇泽',girl:'金芮冰',boyBirth:'2006-10-31',girlBirth:'2006-10-17',
   anniversary:'2025-09-21',song:'就是爱你 - 陶喆',songUrl:'',songLyrics:'',
@@ -1068,7 +1067,9 @@ function rTL(){
   c.innerHTML=s.map(function(m){return'<div class="tl-card" onclick="openMem(\''+m.date+'\',\''+m.id+'\')"><div class="tld">📅 '+fd(m.date)+'</div><h4>'+(m.title||'未命名')+'</h4><div class="tlp">'+(m.content||'点击查看')+'</div>'+(m.image?'<img src="'+m.image+'" loading="lazy">':'')+'</div>'}).join('')
 }
 
-// ===== PHOTOS =====
+// ===== PHOTOS (存GitHub仓库，不限量) =====
+var REPO_API = 'https://api.github.com/repos/hzx-dom/our-love/contents/photos/';
+
 function rPht(){
   var g=document.getElementById('pGrid'),h='';
   document.getElementById('pCount').textContent=D.photos.length+' 张照片';
@@ -1076,8 +1077,64 @@ function rPht(){
   D.photos.forEach(function(p,i){h+='<div class="photo-frame" onclick="openLB('+i+')"><img src="'+p.src+'" loading="lazy"><div class="pfcap">'+eh(p.desc||'')+'</div><button class="pfdel" onclick="event.stopPropagation();dPht('+i+')">✕</button></div>'});
   g.innerHTML=h;
 }
-function aPht(e){var fs=e.target.files;if(!fs.length)return;Array.from(fs).forEach(function(f){cimg(f).then(function(u){D.photos.push({id:gId(),src:u,desc:'',date:new Date().toISOString().split('T')[0]});ps();rPht();ts('📷 已添加')})});e.target.value=''}
-function dPht(i){if(!confirm('确定删除？'))return;D.photos.splice(i,1);ps();rPht()}
+
+function aPht(e){
+  var fs=e.target.files;if(!fs.length)return;
+  Array.from(fs).forEach(function(f){
+    ts('📤 上传中...');
+    cimg(f, 1200, 500).then(function(dataUri){
+      // 提取base64（去掉data:image/jpeg;base64,前缀）
+      var base64 = dataUri.split(',')[1];
+      var fname = Date.now()+'_'+Math.random().toString(36).slice(2,6)+'.jpg';
+      return fetch(REPO_API + fname, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'token ' + gistToken,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: '📷 添加照片',
+          content: base64
+        })
+      }).then(function(r){ return r.json(); }).then(function(resp){
+        if(resp.content && resp.content.download_url){
+          D.photos.push({
+            id: gId(),
+            src: resp.content.download_url,
+            _ghPath: resp.content.path,
+            _ghSha: resp.content.sha,
+            desc: '',
+            date: new Date().toISOString().split('T')[0]
+          });
+          ps(); rPht(); ts('📷 已添加');
+        } else {
+          ts('⚠️ 上传失败，请确认Token包含repo权限');
+        }
+      });
+    }).catch(function(){
+      ts('⚠️ 上传失败，请检查网络');
+    });
+  });
+  e.target.value='';
+}
+
+function dPht(i){
+  if(!confirm('确定删除？'))return;
+  var p = D.photos[i];
+  // 尝试从仓库删除
+  if(p._ghPath && p._ghSha && gistToken){
+    fetch(REPO_API.replace('contents/photos/','contents/') + p._ghPath, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': 'token ' + gistToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message: '删除照片', sha: p._ghSha })
+    }).catch(function(){});
+  }
+  D.photos.splice(i,1); ps(); rPht(); ts('已删除');
+}
+
 var lbI=-1;
 function openLB(i){lbI=i;var p=D.photos[i];if(!p)return;document.getElementById('lbImg').src=p.src;document.getElementById('lbDesc').textContent=p.desc||'';document.getElementById('lightbox').classList.remove('hidden')}
 function closeLB(){document.getElementById('lightbox').classList.add('hidden')}
@@ -1373,16 +1430,9 @@ function initSync() {
 
 function pushToGist() {
   if (!gistToken || gistSyncing) return;
-  var payload = JSON.stringify(D);
-  console.log('📦 数据大小:', (payload.length/1024).toFixed(0), 'KB');
-  if (payload.length > MAX_GIST) {
-    ts('⚠️ 数据超过限制！请删除一些照片再试（最多保留15张）');
-    updateSyncStatus();
-    return;
-  }
   gistSyncing = true;
   var newVer = Math.max(gistRemoteVer, gistLocalVer) + 1;
-  var fileContent = JSON.stringify({ ver: newVer, data: payload });
+  var fileContent = JSON.stringify({ ver: newVer, data: JSON.stringify(D) });
   fetch(GIST_API, {
     method: 'PATCH',
     headers: {
@@ -1463,7 +1513,7 @@ function updateSyncStatus() {
 }
 
 function setupCloudSync() {
-  var token = prompt('🔑 GitHub Token：\n\n📌 在 github.com/settings/tokens\n📌 点 Generate new token (classic)\n📌 只勾选 gist 权限\n📌 复制生成的 token (ghp_开头)\n📌 双方填入相同的 Token\n', gistToken || '');
+  var token = prompt('🔑 GitHub Token：\n\n📌 在 github.com/settings/tokens\n📌 点 Generate new token (classic)\n📌 勾选 gist + repo 权限\n📌 复制生成的 token (ghp_开头)\n📌 双方填入相同的 Token 即可\n', gistToken || '');
   if (!token || !token.trim()) return;
   gistToken = token.trim();
   localStorage.setItem('love_gist_token', gistToken);
