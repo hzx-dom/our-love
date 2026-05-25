@@ -2,7 +2,13 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="我们的时光">
+<meta name="theme-color" content="#FDF8F5">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>💖</text></svg>">
+<link rel="manifest" href="manifest.json">
 <title>我们的时光</title>
 <style>
 :root {
@@ -43,6 +49,10 @@ body{
 }
 .top-nav-brand:hover{background:rgba(232,135,139,0.04)}
 .top-nav-brand .bi{font-size:1.1rem;animation:heartbeat 1.2s ease-in-out infinite}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;cursor:pointer;transition:background .3s;margin-left:2px}
+.sync-dot.online{background:#4CAF50;box-shadow:0 0 6px rgba(76,175,80,.4)}
+.sync-dot.connecting{background:#FF9800;animation:syncPulse 1.2s ease-in-out infinite}
+@keyframes syncPulse{0%,100%{opacity:1}50%{opacity:.3}}
 .nav-chip{
   display:inline-flex;align-items:center;gap:5px;padding:7px 14px;
   border:1.5px solid rgba(0,0,0,0.06);background:rgba(255,255,255,0.5);
@@ -666,6 +676,7 @@ body{
 <!-- ===== TOP NAV ===== -->
 <nav class="top-nav"><div class="top-nav-inner" id="topNavInner">
   <div class="top-nav-brand" onclick="switchTab('sec-home')"><span class="bi">💖</span>我们的时光</div>
+  <div class="sync-dot" id="syncDot" onclick="setupCloudSync()" title="点击设置云端同步"></div>
 </div></nav>
 
 <!-- ===== PREMIUM MUSIC PLAYER ===== -->
@@ -830,11 +841,11 @@ body{
   <div style="text-align:center;font-size:.65rem;color:var(--text-l);margin-top:4px">在地图上标记一起去过的地方</div>
   <div class="bcard" style="margin-top:14px;text-align:center">
     <div style="font-size:.78rem;font-weight:700;margin-bottom:6px">🔄 数据同步</div>
-    <div style="font-size:.6rem;color:var(--text-l);margin-bottom:8px">不同设备间同步回忆</div>
+    <div style="font-size:.6rem;color:var(--text-l);margin-bottom:8px" id="syncStatusText">点击下方设置实时同步</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
-      <button class="btn btn-1 btn-s" onclick="expData()">📤 导出</button>
+      <button class="btn btn-1 btn-s" id="btnSyncSetup" onclick="setupCloudSync()">☁️ 设置同步</button>
+      <button class="btn btn-2 btn-s" onclick="expData()">📤 导出</button>
       <button class="btn btn-2 btn-s" onclick="impData()">📥 导入</button>
-      <button class="btn btn-2 btn-s" onclick="copySync()">🔗 复制同步码</button>
     </div>
   </div>
 </section>
@@ -1163,11 +1174,11 @@ function closeLet(){document.getElementById('letModal').classList.add('hidden');
 function rInfo(){
   var c=document.getElementById('infoC'),n=new Date(),a=new Date(D.cfg.anniversary),td=db(a,n);
   var bb=nbd(D.cfg.boyBirth),gb=nbd(D.cfg.girlBirth),bd_=db(n,bb),gd_=db(n,gb);
-  c.innerHTML=[{icon:'💍',label:'纪念日',value:fd(D.cfg.anniversary)+' · '+td+' 天',key:'anniversary'},{icon:'🤵',label:'你的名字',value:D.cfg.boy,key:'boy'},{icon:'👰',label:'TA的名字',value:D.cfg.girl,key:'girl'},{icon:'🎂',label:'你的生日',value:fd(D.cfg.boyBirth)+(bd_===0?' 🎉':' · '+bd_+'天'),key:'boyBirth'},{icon:'🎂',label:'TA的生日',value:fd(D.cfg.girlBirth)+(gd_===0?' 🎉':' · '+gd_+'天'),key:'girlBirth'},{icon:'🎵',label:'我们的歌',value:D.cfg.song,key:'song'},{icon:'🔗',label:'歌曲链接',value:D.cfg.songUrl||'未设置(MP3直链)',key:'songUrl'},{icon:'📝',label:'歌曲歌词',value:(D.cfg.songLyrics||'未设置')+' (点击编辑)',key:'songLyricsTL'},{icon:'📍',label:'第一次见面的地方',value:D.cfg.firstMeet,key:'firstMeet'},{icon:'☁️',label:'云端同步',value:syncToken?'✅ 已开启 (双方实时同步)':'❌ 未开启 (点击设置)',key:'cloudSetup'}].map(function(f){return'<div class="info-card" onclick="eInfo(\''+f.key+'\',\''+f.label+'\')"><span class="ii">'+f.icon+'</span><div><div class="il">'+f.label+'</div><div class="iv">'+eh(f.value)+'</div></div></div>'}).join('')
+  c.innerHTML=[{icon:'💍',label:'纪念日',value:fd(D.cfg.anniversary)+' · '+td+' 天',key:'anniversary'},{icon:'🤵',label:'你的名字',value:D.cfg.boy,key:'boy'},{icon:'👰',label:'TA的名字',value:D.cfg.girl,key:'girl'},{icon:'🎂',label:'你的生日',value:fd(D.cfg.boyBirth)+(bd_===0?' 🎉':' · '+bd_+'天'),key:'boyBirth'},{icon:'🎂',label:'TA的生日',value:fd(D.cfg.girlBirth)+(gd_===0?' 🎉':' · '+gd_+'天'),key:'girlBirth'},{icon:'🎵',label:'我们的歌',value:D.cfg.song,key:'song'},{icon:'🔗',label:'歌曲链接',value:D.cfg.songUrl||'未设置(MP3直链)',key:'songUrl'},{icon:'📝',label:'歌曲歌词',value:(D.cfg.songLyrics||'未设置')+' (点击编辑)',key:'songLyricsTL'},{icon:'📍',label:'第一次见面的地方',value:D.cfg.firstMeet,key:'firstMeet'},{icon:'☁️',label:'云端同步',value:LC_APP_ID?'✅ 已开启 (实时同步中)':'❌ 未开启 (点击设置)',key:'cloudSetup'}].map(function(f){return'<div class="info-card" onclick="eInfo(\''+f.key+'\',\''+f.label+'\')"><span class="ii">'+f.icon+'</span><div><div class="il">'+f.label+'</div><div class="iv">'+eh(f.value)+'</div></div></div>'}).join('')
 }
 function eInfo(key,label){
   if(key==='cloudSetup'){
-    if(syncToken){if(confirm('关闭云端同步？'))disableSync()}else{setSyncToken()}
+    if(LC_APP_ID){if(confirm('关闭云端同步？'))disableSync()}else{setupCloudSync()}
     return
   }
   if(key==='songLyricsTL'){setLyrics();return}
@@ -1297,110 +1308,180 @@ function showSurprise(){
 }
 function startSurprises(){clearInterval(sTimer);sTimer=setInterval(function(){if(!document.hidden)showSurprise()},90000+Math.random()*120000)}
 
-// ===== GITHUB GIST CLOUD SYNC =====
-// Both devices read/write to the same GitHub Gist - works on any network!
-var GIST_ID='b66c3036db374de80808fac1646d6529';
-var GIST_RAW='https://gist.githubusercontent.com/hzx-dom/'+GIST_ID+'/raw/cloud_data.json';
-var GIST_API='https://api.github.com/gists/'+GIST_ID;
-var syncToken=localStorage.getItem('love_sync_token')||'';
-var gistVer=0,localV=0,gistSyncTimer=null;
+// ===== LEANCLOUD 实时云端同步 (国内专属) =====
+// 国内访问飞速，双方填入相同的 App ID 和 App Key 即可实时同步
+// 注册地址：https://leancloud.cn (免费注册 → 创建应用 → 设置 → 应用 Keys)
+var LC_APP_ID = localStorage.getItem('love_lc_appid') || '';
+var LC_APP_KEY = localStorage.getItem('love_lc_appkey') || '';
+var lcSyncObjId = null;
+var lcRemoteVer = 0;
+var lcLocalVer = 0;
+var lcSyncing = false;
+var lcSkipPush = false;
+var lcSyncTimer = null;
 
-function initSync(){
-  if(!syncToken)return; // No token configured yet
-  // Load from Gist
-  fetch(GIST_RAW+'?t='+Date.now()).then(function(r){return r.json()}).then(function(d){
-    if(d&&d.ver&&d.data&&d.ver>localV){
-      try{var nd=JSON.parse(d.data);if(nd.cfg&&nd.memories){D=nd;ps();refreshAll();gistVer=d.ver;localV=d.ver;ts('☁️ 数据已同步')}}catch(e){}
-    }
-  }).catch(function(){});
-  // Auto-sync every 10 seconds
-  gistSyncTimer=setInterval(pullFromGist,10000);
-  // Push on changes
-  var _ops=ps;ps=function(){_ops();setTimeout(pushToGist,500)};
+function lcApi(method, path, body) {
+  if (!LC_APP_ID || !LC_APP_KEY) return Promise.reject('not configured');
+  return fetch('https://' + LC_APP_ID + '.api.lncld.net/1.1' + path, {
+    method: method,
+    headers: {
+      'X-LC-Id': LC_APP_ID,
+      'X-LC-Key': LC_APP_KEY + ',master',
+      'Content-Type': 'application/json'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  }).then(function(r) { return r.json(); });
 }
-function pullFromGist(){
-  if(!syncToken||document.hidden)return;
-  fetch(GIST_RAW+'?t='+Date.now()).then(function(r){return r.json()}).then(function(d){
-    if(d&&d.ver&&d.data&&d.ver>gistVer){
-      try{var nd=JSON.parse(d.data);if(nd.cfg&&nd.memories){D=nd;ps();refreshAll();gistVer=d.ver;localV=d.ver;console.log('☁️ Synced from cloud')}}catch(e){}
-    }
-  }).catch(function(){});
-}
-function pushToGist(){
-  if(!syncToken)return;
-  localV++;var v=localV;
-  fetch(GIST_API,{method:'PATCH',headers:{'Authorization':'token '+syncToken,'Content-Type':'application/json'},body:JSON.stringify({files:{'cloud_data.json':{content:JSON.stringify({ver:v,data:JSON.stringify(D)})}}})}).then(function(){
-    gistVer=v;
-  }).catch(function(){localV--});
-}
-function setSyncToken(){
-  var t=prompt('输入GitHub Token实现云端同步：\n\n如何获取：\n1. 打开 github.com/settings/tokens\n2. 点击 Generate new token (classic)\n3. 勾选 gist 权限\n4. 复制生成的token','');
-  if(t&&t.trim()){syncToken=t.trim();localStorage.setItem('love_sync_token',syncToken);initSync();ts('☁️ 云端同步已开启！');rInfo()}
-}
-function disableSync(){syncToken='';localStorage.removeItem('love_sync_token');clearInterval(gistSyncTimer);ts('☁️ 同步已关闭');rInfo()}
 
-// ===== LOCAL SERVER SYNC =====
-// When connected to the computer's server, auto-sync data
-var syncUrl='',syncTimer=null;
-function initSync(){
-  // Detect if running on the Python server
-  var h=window.location.hostname;
-  if(h!=='localhost'&&h.indexOf('192.168.')!==0&&h.indexOf('127.0.0.1')!==0)return; // Not on our server
-  syncUrl=window.location.protocol+'//'+window.location.host+'/api/sync';
-  // Load from server
-  fetch(syncUrl).then(function(r){return r.json()}).then(function(d){
-    if(d&&d.data){try{var nd=JSON.parse(d.data);if(nd.cfg&&nd.memories){D=nd;ps();refreshAll();console.log('☁️ 从服务器加载数据')}}catch(e){}}
-  }).catch(function(){});
-  // Auto-sync every 5 seconds
-  syncTimer=setInterval(function(){if(!document.hidden)pushToServer()},5000);
-  // Push on changes
-  var _ops=ps;ps=function(){_ops();setTimeout(pushToServer,300)};
-}
-function pushToServer(){
-  if(!syncUrl)return;
-  fetch(syncUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ver:Date.now(),data:JSON.stringify(D)})}).catch(function(){});
-}
-// ===== CLOUD SYNC (LeanCloud) =====
-var cloudObjId=null,cloudVer=0,localVer=0,syncing=false;
-function cloudApi(method,path,body){
-  if(!D.cfg.cloudAppId||!D.cfg.cloudAppKey)return Promise.reject('not configured');
-  return fetch('https://'+D.cfg.cloudAppId+'.api.lncldglobal.com/1.1'+path,{
-    method:method,headers:{'X-LC-Id':D.cfg.cloudAppId,'X-LC-Key':D.cfg.cloudAppKey,'Content-Type':'application/json'},
-    body:body?JSON.stringify(body):undefined
-  }).then(function(r){return r.json()});
-}
-function enableCloud(id,key){
-  D.cfg.cloudAppId=id;D.cfg.cloudAppKey=key;D.cfg.cloudEnable=true;ps();
-  // Initialize cloud object
-  cloudApi('POST','/classes/SyncData',{data:JSON.stringify(D),ver:1,updatedAt:new Date().toISOString()}).then(function(r){
-    if(r.objectId){cloudObjId=r.objectId;cloudVer=1;localVer=1;ts('☁️ 云端同步已开启')}
-  }).catch(function(){ts('⚠️ 云端连接失败，检查ID和Key');D.cfg.cloudEnable=false;ps()});
-}
-function pushToCloud(){
-  if(!D.cfg.cloudEnable||!cloudObjId||syncing)return;
-  syncing=true;localVer++;var v=localVer;
-  cloudApi('PUT','/classes/SyncData/'+cloudObjId,{data:JSON.stringify(D),ver:v,updatedAt:new Date().toISOString()}).then(function(){
-    cloudVer=v;syncing=false;
-  }).catch(function(){localVer--;syncing=false});
-}
-function pullFromCloud(){
-  if(!D.cfg.cloudEnable||!cloudObjId||syncing)return;
-  syncing=true;
-  cloudApi('GET','/classes/SyncData/'+cloudObjId).then(function(r){
-    syncing=false;
-    if(r.ver&&r.ver>cloudVer&&r.data){
-      try{var nd=JSON.parse(r.data);if(nd.cfg&&nd.memories){D=nd;cloudVer=r.ver;localVer=r.ver;ps();refreshAll();ts('☁️ 数据已同步')}}
-      catch(e){}
+function initSync() {
+  updateSyncStatus();
+  if (!LC_APP_ID || !LC_APP_KEY) return;
+
+  // 从 LeanCloud 加载最新数据
+  lcApi('GET', '/classes/CoupleData?limit=1&order=-updatedAt').then(function(r) {
+    if (r.results && r.results.length > 0) {
+      var remote = r.results[0];
+      lcSyncObjId = remote.objectId;
+      lcRemoteVer = remote.version || 0;
+      if (lcRemoteVer > lcLocalVer && remote.data) {
+        try {
+          var nd = JSON.parse(remote.data);
+          if (nd.cfg && nd.memories) {
+            D = nd;
+            lcSkipPush = true; sv(D); lcSkipPush = false;
+            refreshAll();
+            lcLocalVer = lcRemoteVer;
+            ts('☁️ 数据已同步');
+          }
+        } catch(e) {}
+      } else if (lcLocalVer > lcRemoteVer) {
+        pushToLC();
+      }
+    } else {
+      pushToLC();
     }
-  }).catch(function(){syncing=false});
+    updateSyncStatus();
+  }).catch(function() { updateSyncStatus(); });
+
+  // 每1.5秒轮询，实现近实时同步
+  if (lcSyncTimer) clearInterval(lcSyncTimer);
+  lcSyncTimer = setInterval(pullFromLC, 1500);
+
+  // 本地变更自动推送 (跳过云端拉取的回写)
+  var _origSv = sv;
+  sv = function(d) {
+    _origSv(d);
+    if (lcSkipPush) return;
+    lcLocalVer++;
+    clearTimeout(sv._pushT);
+    sv._pushT = setTimeout(pushToLC, 200);
+  };
 }
-function refreshAll(){upHome();upTimer();rImpD();rMiniCal();rTL();rPht();rMap();rWish();rLet();rInfo();rNav()}
-// Auto sync
-setInterval(function(){
-  if(D.cfg.cloudEnable&&cloudObjId&&document.visibilityState==='visible')pullFromCloud();
-},15000);
-// Push on data change (called after every persist)
-var _origPs=ps;ps=function(){_origPs();if(D.cfg.cloudEnable&&cloudObjId)setTimeout(pushToCloud,500)};
+
+function pushToLC() {
+  if (!LC_APP_ID || !LC_APP_KEY || lcSyncing) return;
+  lcSyncing = true;
+  var body = { data: JSON.stringify(D), version: lcLocalVer, updatedAt: new Date().toISOString() };
+  var method = lcSyncObjId ? 'PUT' : 'POST';
+  var path = lcSyncObjId ? '/classes/CoupleData/' + lcSyncObjId : '/classes/CoupleData';
+  lcApi(method, path, body).then(function(r) {
+    lcSyncing = false;
+    if (r.objectId && !lcSyncObjId) lcSyncObjId = r.objectId;
+    lcRemoteVer = lcLocalVer;
+    updateSyncStatus();
+  }).catch(function() {
+    lcSyncing = false;
+    updateSyncStatus();
+  });
+}
+
+function pullFromLC() {
+  if (!LC_APP_ID || !LC_APP_KEY || lcSyncing || !lcSyncObjId || document.hidden) return;
+  lcSyncing = true;
+  lcApi('GET', '/classes/CoupleData/' + lcSyncObjId).then(function(r) {
+    lcSyncing = false;
+    if (r.version && r.version > lcRemoteVer && r.data) {
+      try {
+        var nd = JSON.parse(r.data);
+        if (nd.cfg && nd.memories) {
+          D = nd;
+          lcSkipPush = true; sv(D); lcSkipPush = false;
+          refreshAll();
+          lcLocalVer = r.version;
+          lcRemoteVer = r.version;
+          ts('☁️ 对方更新了数据');
+        }
+      } catch(e) {}
+    }
+    updateSyncStatus();
+  }).catch(function() {
+    lcSyncing = false;
+    updateSyncStatus();
+  });
+}
+
+function updateSyncStatus() {
+  var dot = document.getElementById('syncDot');
+  if (!dot) return;
+  var stxt = document.getElementById('syncStatusText');
+  var sbtn = document.getElementById('btnSyncSetup');
+  if (!LC_APP_ID || !LC_APP_KEY) {
+    dot.className = 'sync-dot';
+    dot.title = '点击设置云端同步';
+    if(stxt) stxt.textContent = '点击下方设置实时同步';
+    if(sbtn) sbtn.textContent = '☁️ 设置同步';
+  } else if (lcSyncing && !lcSyncObjId) {
+    dot.className = 'sync-dot connecting';
+    dot.title = '首次同步中...';
+    if(stxt) stxt.textContent = '正在连接云端...';
+  } else if (lcSyncObjId) {
+    dot.className = 'sync-dot online';
+    dot.title = '已连接 · 实时同步中';
+    if(stxt) stxt.textContent = '✅ 实时同步已开启 · 双方数据自动同步';
+    if(sbtn) sbtn.textContent = '☁️ 已连接';
+  } else {
+    dot.className = 'sync-dot connecting';
+    dot.title = '连接中...';
+    if(stxt) stxt.textContent = '正在连接云端...';
+  }
+}
+
+function setupCloudSync() {
+  var appId = prompt('🔑 LeanCloud App ID：\n\n📌 在 leancloud.cn 免费注册 → 创建应用\n📌 进入「设置 → 应用 Keys」获取\n📌 双方填入相同的 App ID 和 Key\n', LC_APP_ID || '');
+  if (!appId || !appId.trim()) return;
+  var appKey = prompt('🔑 LeanCloud App Key：', LC_APP_KEY || '');
+  if (!appKey || !appKey.trim()) return;
+  LC_APP_ID = appId.trim();
+  LC_APP_KEY = appKey.trim();
+  localStorage.setItem('love_lc_appid', LC_APP_ID);
+  localStorage.setItem('love_lc_appkey', LC_APP_KEY);
+  lcSyncObjId = null;
+  lcRemoteVer = 0;
+  lcLocalVer = 0;
+  lcSyncing = false;
+  if (lcSyncTimer) clearInterval(lcSyncTimer);
+  initSync();
+  ts('☁️ 同步已开启！双方填入相同信息即可实时同步');
+  rInfo();
+}
+
+function disableSync() {
+  if (!confirm('确定关闭云端同步？')) return;
+  LC_APP_ID = '';
+  LC_APP_KEY = '';
+  localStorage.removeItem('love_lc_appid');
+  localStorage.removeItem('love_lc_appkey');
+  lcSyncObjId = null;
+  lcRemoteVer = 0;
+  lcLocalVer = 0;
+  lcSyncing = false;
+  if (lcSyncTimer) clearInterval(lcSyncTimer);
+  updateSyncStatus();
+  ts('☁️ 同步已关闭');
+  rInfo();
+}
+
+function refreshAll() { upHome(); upTimer(); rImpD(); rMiniCal(); rTL(); rPht(); rMap(); rWish(); rLet(); rInfo(); rNav(); }
 
 // ===== DATA SYNC =====
 function expData(){
@@ -1436,7 +1517,33 @@ function impSyncCode(){
   }catch(e){ts('⚠️ 同步码无效或已过期')}
 }
 
-document.addEventListener('DOMContentLoaded',function(){init();initMusic();initParticles();startSurprises();initSync()});
+document.addEventListener('DOMContentLoaded',function(){init();initMusic();initParticles();startSurprises();initSync();regSW()});
+
+// ===== PWA: Service Worker 注册 & 安装提示 =====
+function regSW(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+  // 监听PWA安装事件
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+    // 5秒后提示安装
+    setTimeout(function(){
+      if(deferredPrompt && confirm('📱 安装「我们的时光」到手机桌面？\n\n安装后可以像App一样使用，支持离线访问！')){
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(r){
+          if(r.outcome==='accepted')ts('✅ 安装成功！');
+          deferredPrompt = null;
+        });
+      }
+    }, 5000);
+  });
+  window.addEventListener('appinstalled', function(){
+    ts('✅ 安装完成！在桌面打开即可使用');
+  });
+}
 </script>
 </body>
 </html>
