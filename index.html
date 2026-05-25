@@ -1335,20 +1335,24 @@ function initSync() {
     if (d && d.files && d.files['cloud_data.json']) {
       try {
         var raw = JSON.parse(d.files['cloud_data.json'].content);
-        if (raw && raw.ver && raw.data && raw.ver > gistRemoteVer) {
+        gistRemoteVer = raw.ver || 0;
+        if (raw.ver && raw.data && raw.ver > gistLocalVer) {
           var nd = JSON.parse(raw.data);
           if (nd.cfg && nd.memories) {
             D = nd;
             gistSkipPush = true; sv(D); gistSkipPush = false;
             refreshAll();
             gistLocalVer = raw.ver;
-            gistRemoteVer = raw.ver;
             ts('☁️ 数据已同步');
           }
         }
       } catch(e) {}
     }
-    if (gistLocalVer > gistRemoteVer) pushToGist();
+    // 首次同步：云端为空则推送本地数据；本地版本更高也推送
+    if (gistRemoteVer === 0 || gistLocalVer > gistRemoteVer) {
+      gistLocalVer = Math.max(gistLocalVer, gistRemoteVer);
+      pushToGist();
+    }
     updateSyncStatus();
   }).catch(function() { updateSyncStatus(); });
 
@@ -1403,7 +1407,7 @@ function pullFromGist() {
     if (d && d.files && d.files['cloud_data.json']) {
       try {
         var raw = JSON.parse(d.files['cloud_data.json'].content);
-        if (raw && raw.ver && raw.ver > gistRemoteVer && raw.data) {
+        if (raw && raw.ver && raw.data && raw.ver > gistRemoteVer) {
           var nd = JSON.parse(raw.data);
           if (nd.cfg && nd.memories) {
             D = nd;
