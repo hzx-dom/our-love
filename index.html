@@ -1067,9 +1067,10 @@ function rTL(){
   c.innerHTML=s.map(function(m){return'<div class="tl-card" onclick="openMem(\''+m.date+'\',\''+m.id+'\')"><div class="tld">📅 '+fd(m.date)+'</div><h4>'+(m.title||'未命名')+'</h4><div class="tlp">'+(m.content||'点击查看')+'</div>'+(m.image?'<img src="'+m.image+'" loading="lazy">':'')+'</div>'}).join('')
 }
 
-// ===== PHOTOS (存GitHub仓库，api.github.com走图，不限量) =====
+// ===== PHOTOS (仓库存储+分类相册，不限量) =====
 var REPO_API = 'https://api.github.com/repos/hzx-dom/our-love/contents/photos/';
 var photoCache = {};
+var curAlbum = '';
 
 function getPhotoUrl(fname, cb){
   if(photoCache[fname]){ cb(photoCache[fname]); return; }
@@ -1084,52 +1085,85 @@ function getPhotoUrl(fname, cb){
   }).catch(function(){ cb(''); });
 }
 
-function rPht(){
-  var g=document.getElementById('pGrid'),h='';
-  document.getElementById('pCount').textContent=D.photos.length+' 张照片';
-  h+='<div class="add-photo"><span class="ap">+</span><span class="at">添加照片</span><input type="file" accept="image/*" onchange="aPht(event)" multiple></div>';
-  D.photos.forEach(function(p,i){
-    var src = p.src || ''; // 旧格式(base64)直接用，新格式(fname)异步加载
-    var fn = p.fname || '';
-    h+='<div class="photo-frame" onclick="openLB('+i+')">'+
-      '<img src="'+(src||'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1 1%22><rect width=%221%22 height=%221%22 fill=%22%23f5f0ed%22/></svg>')+'" '+
-      'data-fn="'+fn+'" data-pi="'+i+'" loading="lazy" style="background:#f5f0ed;aspect-ratio:1;object-fit:cover;width:100%">'+
-      '<div class="pfcap">'+eh(p.desc||'')+'</div>'+
-      '<button class="pfdel" onclick="event.stopPropagation();dPht('+i+')">✕</button></div>';
+function rPht(album){
+  if(typeof album==='undefined') album = curAlbum;
+  curAlbum = album;
+  var g=document.getElementById('pGrid');
+  var filtered = album ? D.photos.filter(function(p){ return (p.album||'')===album; }) : D.photos;
+  document.getElementById('pCount').textContent = filtered.length + (album?'/'+D.photos.length:'') + ' 张照片';
+
+  // 相册分类标签
+  var albums = {};
+  D.photos.forEach(function(p){ var a = p.album||'默认'; albums[a] = (albums[a]||0)+1; });
+  var tabs = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">';
+  tabs += '<button class="nav-chip'+(album===''?' active':'')+'" onclick="rPht(\'\')">📷 全部('+D.photos.length+')</button>';
+  Object.keys(albums).forEach(function(a){
+    tabs += '<button class="nav-chip'+(album===a?' active':'')+'" onclick="rPht(\''+a+'\')">'+a+'('+albums[a]+')</button>';
   });
-  g.innerHTML=h;
-  // 新格式照片：异步从仓库加载
-  D.photos.forEach(function(p,i){
+  tabs += '<button class="nav-chip nav-chip-add" onclick="newAlbum()">➕ 新建相册</button>';
+  tabs += '</div>';
+  g.innerHTML = tabs;
+
+  g.innerHTML += '<div style="margin-bottom:10px"><div class="add-photo"><span class="ap">+</span><span class="at">添加照片'+(album?'到'+album:'')+'</span><input type="file" accept="image/*" onchange="aPht(event)" multiple></div></div>';
+
+  // 照片网格
+  var grid = document.createElement('div'); grid.className = 'photo-grid'; grid.id = 'pGridInner';
+  filtered.forEach(function(p){
+    var idx = D.photos.indexOf(p);
+    var src = p.src || '';
+    var fn = p.fname || '';
+    var div = document.createElement('div'); div.className = 'photo-frame'; div.onclick = function(){ openLB(idx); };
+    div.innerHTML = '<img src="'+(src||'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1 1%22><rect width=%221%22 height=%221%22 fill=%22%23f5f0ed%22/></svg>')+'" '+
+      'data-fn="'+fn+'" data-pidx="'+idx+'" loading="lazy" style="background:#f5f0ed;aspect-ratio:1;object-fit:cover;width:100%">'+
+      '<div class="pfcap">'+eh(p.desc||'')+(p.album?' ['+p.album+']':'')+'</div>'+
+      '<button class="pfdel" onclick="event.stopPropagation();dPht('+idx+')">✕</button>'+
+      '<button class="pfdel" style="right:30px" onclick="event.stopPropagation();movePht('+idx+')" title="移动">📁</button>';
+    grid.appendChild(div);
+  });
+  g.appendChild(grid);
+
+  // 异步加载仓库照片
+  filtered.forEach(function(p){
     if(p.fname && !p.src) getPhotoUrl(p.fname, function(url){
-      if(url){ var imgs = document.querySelectorAll('img[data-pi="'+i+'"]'); imgs.forEach(function(img){ img.src = url; }); }
+      if(url){ var imgs = document.querySelectorAll('img[data-pidx="'+D.photos.indexOf(p)+'"]'); imgs.forEach(function(img){ img.src = url; }); }
     });
   });
 }
 
+function newAlbum(){
+  var name = prompt('📁 新建相册名称：'); if(!name||!name.trim()) return;
+  curAlbum = name.trim(); rPht(curAlbum); ts('📁 已创建：'+curAlbum+'，现在添加照片即可');
+}
+
+function movePht(i){
+  var p = D.photos[i]; if(!p) return;
+  var albums = {}; D.photos.forEach(function(x){ var a = x.album||'默认'; albums[a]=true; });
+  var list = Object.keys(albums).join('、');
+  var na = prompt('📁 移动到哪个相册？\n现有：'+list+'\n\n输入新名称=创建新相册', p.album||'默认');
+  if(na===null) return;
+  p.album = (na.trim()==='默认'?'':na.trim()); ps(); rPht(); ts('已移动');
+}
+
 function aPht(e){
   var fs=e.target.files;if(!fs.length)return;
+  var album = curAlbum || '';
   Array.from(fs).forEach(function(f){
     ts('📤 上传中...');
-    cimg(f, 1200, 300).then(function(dataUri){
+    cimg(f, 1200, 200).then(function(dataUri){
       var base64 = dataUri.split(',')[1];
       var fname = Date.now()+'_'+Math.random().toString(36).slice(2,6)+'.jpg';
       return fetch(REPO_API + fname, {
         method: 'PUT',
         headers: { 'Authorization': 'token ' + gistToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: '📷 添加照片', content: base64 })
+        body: JSON.stringify({ message: '📷 '+album, content: base64 })
       }).then(function(r){ return r.json(); }).then(function(resp){
         if(resp.content){
-          D.photos.push({
-            id: gId(), fname: fname,
+          D.photos.push({ id: gId(), fname: fname, album: album,
             _ghPath: resp.content.path, _ghSha: resp.content.sha,
-            desc: '', date: new Date().toISOString().split('T')[0]
-          });
-          ps(); rPht(); ts('📷 已添加');
-        } else if(resp.message){
-          ts('⚠️ '+resp.message);
-        } else {
-          ts('⚠️ 上传失败，Token需包含repo权限');
-        }
+            desc: '', date: new Date().toISOString().split('T')[0] });
+          ps(); rPht(); ts('📷 已添加到 '+ (album||'默认'));
+        } else if(resp.message){ ts('⚠️ '+resp.message); }
+        else { ts('⚠️ 上传失败，Token需包含repo权限'); }
       });
     }).catch(function(){ ts('⚠️ 上传失败'); });
   });
@@ -1153,18 +1187,16 @@ function dPht(i){
 var lbI=-1;
 function openLB(i){
   lbI=i;var p=D.photos[i];if(!p)return;
-  document.getElementById('lbImg').src = photoCache[p.fname] || '';
-  document.getElementById('lbDesc').textContent=p.desc||'';
+  document.getElementById('lbImg').src = photoCache[p.fname] || p.src || '';
+  document.getElementById('lbDesc').textContent = (p.desc||'') + (p.album?' ['+p.album+']':'');
   document.getElementById('lightbox').classList.remove('hidden');
-  // 加载高清版
   if(p.fname && !photoCache[p.fname]){
     getPhotoUrl(p.fname, function(url){ document.getElementById('lbImg').src = url; });
   }
 }
 function closeLB(){document.getElementById('lightbox').classList.add('hidden')}
-function editPDesc(){if(lbI<0||!D.photos[lbI])return;var nd=prompt('编辑描述：',D.photos[lbI].desc||'');if(nd!==null){D.photos[lbI].desc=nd.trim();ps();document.getElementById('lbDesc').textContent=nd.trim();rPht()}}
+function editPDesc(){if(lbI<0||!D.photos[lbI])return;var nd=prompt('编辑描述：',D.photos[lbI].desc||'');if(nd!==null){D.photos[lbI].desc=nd.trim();ps();rPht();document.getElementById('lbDesc').textContent=nd.trim()}}
 document.addEventListener('keydown',function(e){if(document.getElementById('lightbox').classList.contains('hidden'))return;if(e.key==='Escape')closeLB();if(e.key==='ArrowLeft'&&lbI>0)openLB(lbI-1);if(e.key==='ArrowRight'&&lbI<D.photos.length-1)openLB(lbI+1)});
-
 // ===== CHINA MAP =====
 // Simplified China outline coordinates (normalized 0-100%)
 var chinaOutline = [
