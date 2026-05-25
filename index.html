@@ -887,6 +887,7 @@ body{
 
 <script>
 // ===== CONFIG =====
+var MAX_GIST = 900000; // Gist限制~1MB，留安全余量
 var CFG = {
   boy:'吴潇泽',girl:'金芮冰',boyBirth:'2006-10-31',girlBirth:'2006-10-17',
   anniversary:'2025-09-21',song:'就是爱你 - 陶喆',songUrl:'',songLyrics:'',
@@ -1372,8 +1373,16 @@ function initSync() {
 
 function pushToGist() {
   if (!gistToken || gistSyncing) return;
+  var payload = JSON.stringify(D);
+  console.log('📦 数据大小:', (payload.length/1024).toFixed(0), 'KB');
+  if (payload.length > MAX_GIST) {
+    ts('⚠️ 数据超过限制！请删除一些照片再试（最多保留15张）');
+    updateSyncStatus();
+    return;
+  }
   gistSyncing = true;
   var newVer = Math.max(gistRemoteVer, gistLocalVer) + 1;
+  var fileContent = JSON.stringify({ ver: newVer, data: payload });
   fetch(GIST_API, {
     method: 'PATCH',
     headers: {
@@ -1381,11 +1390,7 @@ function pushToGist() {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      files: {
-        'cloud_data.json': {
-          content: JSON.stringify({ ver: newVer, data: JSON.stringify(D) })
-        }
-      }
+      files: { 'cloud_data.json': { content: fileContent } }
     })
   }).then(function() {
     gistSyncing = false;
