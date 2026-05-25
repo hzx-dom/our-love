@@ -1067,16 +1067,42 @@ function rTL(){
   c.innerHTML=s.map(function(m){return'<div class="tl-card" onclick="openMem(\''+m.date+'\',\''+m.id+'\')"><div class="tld">📅 '+fd(m.date)+'</div><h4>'+(m.title||'未命名')+'</h4><div class="tlp">'+(m.content||'点击查看')+'</div>'+(m.image?'<img src="'+m.image+'" loading="lazy">':'')+'</div>'}).join('')
 }
 
-// ===== PHOTOS (存GitHub仓库，走Pages访问，不限量) =====
+// ===== PHOTOS (存GitHub仓库，api.github.com走图，不限量) =====
 var REPO_API = 'https://api.github.com/repos/hzx-dom/our-love/contents/photos/';
-var PHOTO_BASE = 'https://hzx-dom.github.io/our-love/photos/';
+var photoCache = {};
+
+function getPhotoUrl(fname, cb){
+  if(photoCache[fname]){ cb(photoCache[fname]); return; }
+  if(!gistToken){ cb(''); return; }
+  fetch('https://api.github.com/repos/hzx-dom/our-love/contents/photos/' + fname, {
+    headers: { 'Authorization': 'token ' + gistToken, 'Accept': 'application/vnd.github.raw' }
+  }).then(function(r){ return r.blob(); })
+  .then(function(blob){
+    var url = URL.createObjectURL(blob);
+    photoCache[fname] = url;
+    cb(url);
+  }).catch(function(){ cb(''); });
+}
 
 function rPht(){
   var g=document.getElementById('pGrid'),h='';
   document.getElementById('pCount').textContent=D.photos.length+' 张照片';
   h+='<div class="add-photo"><span class="ap">+</span><span class="at">添加照片</span><input type="file" accept="image/*" onchange="aPht(event)" multiple></div>';
-  D.photos.forEach(function(p,i){h+='<div class="photo-frame" onclick="openLB('+i+')"><img src="'+p.src+'" loading="lazy"><div class="pfcap">'+eh(p.desc||'')+'</div><button class="pfdel" onclick="event.stopPropagation();dPht('+i+')">✕</button></div>'});
+  D.photos.forEach(function(p,i){
+    var fn = p.fname || '';
+    h+='<div class="photo-frame" onclick="openLB('+i+')">'+
+      '<img src="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 1 1\'/><rect width=\'1\' height=\'1\' fill=\'%23f0f0f0\'/></svg>" '+
+      'data-fn="'+fn+'" data-pi="'+i+'" loading="lazy" style="background:#f5f0ed;aspect-ratio:1;object-fit:cover;width:100%">'+
+      '<div class="pfcap">'+eh(p.desc||'')+'</div>'+
+      '<button class="pfdel" onclick="event.stopPropagation();dPht('+i+')">✕</button></div>';
+  });
   g.innerHTML=h;
+  // 异步加载照片
+  D.photos.forEach(function(p,i){
+    if(p.fname) getPhotoUrl(p.fname, function(url){
+      if(url){ var imgs = document.querySelectorAll('img[data-pi="'+i+'"]'); imgs.forEach(function(img){ img.src = url; }); }
+    });
+  });
 }
 
 function aPht(e){
@@ -1088,34 +1114,23 @@ function aPht(e){
       var fname = Date.now()+'_'+Math.random().toString(36).slice(2,6)+'.jpg';
       return fetch(REPO_API + fname, {
         method: 'PUT',
-        headers: {
-          'Authorization': 'token ' + gistToken,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: '📷 添加照片',
-          content: base64
-        })
+        headers: { 'Authorization': 'token ' + gistToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: '📷 添加照片', content: base64 })
       }).then(function(r){ return r.json(); }).then(function(resp){
         if(resp.content){
           D.photos.push({
-            id: gId(),
-            src: PHOTO_BASE + fname,
-            _ghPath: resp.content.path,
-            _ghSha: resp.content.sha,
-            desc: '',
-            date: new Date().toISOString().split('T')[0]
+            id: gId(), fname: fname,
+            _ghPath: resp.content.path, _ghSha: resp.content.sha,
+            desc: '', date: new Date().toISOString().split('T')[0]
           });
-          ps(); rPht(); ts('📷 已添加(等几秒加载)');
+          ps(); rPht(); ts('📷 已添加');
         } else if(resp.message){
           ts('⚠️ '+resp.message);
         } else {
           ts('⚠️ 上传失败，Token需包含repo权限');
         }
       });
-    }).catch(function(){
-      ts('⚠️ 上传失败，请检查网络');
-    });
+    }).catch(function(){ ts('⚠️ 上传失败'); });
   });
   e.target.value='';
 }
@@ -1126,18 +1141,25 @@ function dPht(i){
   if(p._ghPath && p._ghSha && gistToken){
     fetch('https://api.github.com/repos/hzx-dom/our-love/contents/' + p._ghPath, {
       method: 'DELETE',
-      headers: {
-        'Authorization': 'token ' + gistToken,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': 'token ' + gistToken, 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: '删除照片', sha: p._ghSha })
     }).catch(function(){});
   }
+  if(p.fname){ URL.revokeObjectURL(photoCache[p.fname]); delete photoCache[p.fname]; }
   D.photos.splice(i,1); ps(); rPht(); ts('已删除');
 }
 
 var lbI=-1;
-function openLB(i){lbI=i;var p=D.photos[i];if(!p)return;document.getElementById('lbImg').src=p.src;document.getElementById('lbDesc').textContent=p.desc||'';document.getElementById('lightbox').classList.remove('hidden')}
+function openLB(i){
+  lbI=i;var p=D.photos[i];if(!p)return;
+  document.getElementById('lbImg').src = photoCache[p.fname] || '';
+  document.getElementById('lbDesc').textContent=p.desc||'';
+  document.getElementById('lightbox').classList.remove('hidden');
+  // 加载高清版
+  if(p.fname && !photoCache[p.fname]){
+    getPhotoUrl(p.fname, function(url){ document.getElementById('lbImg').src = url; });
+  }
+}
 function closeLB(){document.getElementById('lightbox').classList.add('hidden')}
 function editPDesc(){if(lbI<0||!D.photos[lbI])return;var nd=prompt('编辑描述：',D.photos[lbI].desc||'');if(nd!==null){D.photos[lbI].desc=nd.trim();ps();document.getElementById('lbDesc').textContent=nd.trim();rPht()}}
 document.addEventListener('keydown',function(e){if(document.getElementById('lightbox').classList.contains('hidden'))return;if(e.key==='Escape')closeLB();if(e.key==='ArrowLeft'&&lbI>0)openLB(lbI-1);if(e.key==='ArrowRight'&&lbI<D.photos.length-1)openLB(lbI+1)});
