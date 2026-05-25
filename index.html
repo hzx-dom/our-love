@@ -1351,9 +1351,8 @@ function initSync() {
         }
       } catch(e) {}
     }
-    // 首次同步：云端为空则推送本地数据；本地版本更高也推送
+    // 首次同步：云端为空或本地更新 → 推送
     if (gistRemoteVer === 0 || gistLocalVer > gistRemoteVer) {
-      gistLocalVer = Math.max(gistLocalVer, gistRemoteVer);
       pushToGist();
     }
     updateSyncStatus();
@@ -1366,7 +1365,6 @@ function initSync() {
   sv = function(d) {
     _origSv(d);
     if (gistSkipPush) return;
-    gistLocalVer++;
     clearTimeout(sv._pushT);
     sv._pushT = setTimeout(pushToGist, 300);
   };
@@ -1375,6 +1373,7 @@ function initSync() {
 function pushToGist() {
   if (!gistToken || gistSyncing) return;
   gistSyncing = true;
+  var newVer = Math.max(gistRemoteVer, gistLocalVer) + 1;
   fetch(GIST_API, {
     method: 'PATCH',
     headers: {
@@ -1384,13 +1383,14 @@ function pushToGist() {
     body: JSON.stringify({
       files: {
         'cloud_data.json': {
-          content: JSON.stringify({ ver: gistLocalVer, data: JSON.stringify(D) })
+          content: JSON.stringify({ ver: newVer, data: JSON.stringify(D) })
         }
       }
     })
   }).then(function() {
     gistSyncing = false;
-    gistRemoteVer = gistLocalVer;
+    gistLocalVer = newVer;
+    gistRemoteVer = newVer;
     updateSyncStatus();
   }).catch(function() {
     gistSyncing = false;
