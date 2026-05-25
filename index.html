@@ -888,7 +888,7 @@ body{
 <script>
 // ===== CONFIG =====
 var CFG = {
-  boy:'男孩',girl:'女孩',boyBirth:'2006-10-31',girlBirth:'2006-10-17',
+  boy:'吴潇泽',girl:'金芮冰',boyBirth:'2006-10-31',girlBirth:'2006-10-17',
   anniversary:'2025-09-21',song:'就是爱你 - 陶喆',songUrl:'',songLyrics:'',
   firstMeet:'学校图书馆',importantDates:[],
   cloudAppId:'',cloudAppKey:'',cloudEnable:false
@@ -902,6 +902,9 @@ function gd(){return{cfg:JSON.parse(JSON.stringify(CFG)),memories:[],photos:[],w
 var D = ld()||gd();
 ['memories','photos','wishes','letters','customPages','mapPins'].forEach(function(k){if(!D[k])D[k]=[]});
 if(!D.cfg)D.cfg=JSON.parse(JSON.stringify(CFG));
+// 名字迁移：旧默认值 → 真实姓名
+if(D.cfg.boy==='男孩')D.cfg.boy=CFG.boy;
+if(D.cfg.girl==='女孩')D.cfg.girl=CFG.girl;
 if(!D.cfg.importantDates||D.cfg.importantDates.length===0){
   D.cfg.importantDates=[{title:'纪念日',date:D.cfg.anniversary,icon:'💍'},{title:D.cfg.boy+'的生日',date:D.cfg.boyBirth,icon:'🎂'},{title:D.cfg.girl+'的生日',date:D.cfg.girlBirth,icon:'🎂'}];
 }
