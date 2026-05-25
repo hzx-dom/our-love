@@ -1089,17 +1089,18 @@ function rPht(){
   document.getElementById('pCount').textContent=D.photos.length+' 张照片';
   h+='<div class="add-photo"><span class="ap">+</span><span class="at">添加照片</span><input type="file" accept="image/*" onchange="aPht(event)" multiple></div>';
   D.photos.forEach(function(p,i){
+    var src = p.src || ''; // 旧格式(base64)直接用，新格式(fname)异步加载
     var fn = p.fname || '';
     h+='<div class="photo-frame" onclick="openLB('+i+')">'+
-      '<img src="data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 1 1\'/><rect width=\'1\' height=\'1\' fill=\'%23f0f0f0\'/></svg>" '+
+      '<img src="'+(src||'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1 1%22><rect width=%221%22 height=%221%22 fill=%22%23f5f0ed%22/></svg>')+'" '+
       'data-fn="'+fn+'" data-pi="'+i+'" loading="lazy" style="background:#f5f0ed;aspect-ratio:1;object-fit:cover;width:100%">'+
       '<div class="pfcap">'+eh(p.desc||'')+'</div>'+
       '<button class="pfdel" onclick="event.stopPropagation();dPht('+i+')">✕</button></div>';
   });
   g.innerHTML=h;
-  // 异步加载照片
+  // 新格式照片：异步从仓库加载
   D.photos.forEach(function(p,i){
-    if(p.fname) getPhotoUrl(p.fname, function(url){
+    if(p.fname && !p.src) getPhotoUrl(p.fname, function(url){
       if(url){ var imgs = document.querySelectorAll('img[data-pi="'+i+'"]'); imgs.forEach(function(img){ img.src = url; }); }
     });
   });
