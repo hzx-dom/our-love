@@ -1174,11 +1174,11 @@ function closeLet(){document.getElementById('letModal').classList.add('hidden');
 function rInfo(){
   var c=document.getElementById('infoC'),n=new Date(),a=new Date(D.cfg.anniversary),td=db(a,n);
   var bb=nbd(D.cfg.boyBirth),gb=nbd(D.cfg.girlBirth),bd_=db(n,bb),gd_=db(n,gb);
-  c.innerHTML=[{icon:'💍',label:'纪念日',value:fd(D.cfg.anniversary)+' · '+td+' 天',key:'anniversary'},{icon:'🤵',label:'你的名字',value:D.cfg.boy,key:'boy'},{icon:'👰',label:'TA的名字',value:D.cfg.girl,key:'girl'},{icon:'🎂',label:'你的生日',value:fd(D.cfg.boyBirth)+(bd_===0?' 🎉':' · '+bd_+'天'),key:'boyBirth'},{icon:'🎂',label:'TA的生日',value:fd(D.cfg.girlBirth)+(gd_===0?' 🎉':' · '+gd_+'天'),key:'girlBirth'},{icon:'🎵',label:'我们的歌',value:D.cfg.song,key:'song'},{icon:'🔗',label:'歌曲链接',value:D.cfg.songUrl||'未设置(MP3直链)',key:'songUrl'},{icon:'📝',label:'歌曲歌词',value:(D.cfg.songLyrics||'未设置')+' (点击编辑)',key:'songLyricsTL'},{icon:'📍',label:'第一次见面的地方',value:D.cfg.firstMeet,key:'firstMeet'},{icon:'☁️',label:'云端同步',value:LC_APP_ID?'✅ 已开启 (实时同步中)':'❌ 未开启 (点击设置)',key:'cloudSetup'}].map(function(f){return'<div class="info-card" onclick="eInfo(\''+f.key+'\',\''+f.label+'\')"><span class="ii">'+f.icon+'</span><div><div class="il">'+f.label+'</div><div class="iv">'+eh(f.value)+'</div></div></div>'}).join('')
+  c.innerHTML=[{icon:'💍',label:'纪念日',value:fd(D.cfg.anniversary)+' · '+td+' 天',key:'anniversary'},{icon:'🤵',label:'你的名字',value:D.cfg.boy,key:'boy'},{icon:'👰',label:'TA的名字',value:D.cfg.girl,key:'girl'},{icon:'🎂',label:'你的生日',value:fd(D.cfg.boyBirth)+(bd_===0?' 🎉':' · '+bd_+'天'),key:'boyBirth'},{icon:'🎂',label:'TA的生日',value:fd(D.cfg.girlBirth)+(gd_===0?' 🎉':' · '+gd_+'天'),key:'girlBirth'},{icon:'🎵',label:'我们的歌',value:D.cfg.song,key:'song'},{icon:'🔗',label:'歌曲链接',value:D.cfg.songUrl||'未设置(MP3直链)',key:'songUrl'},{icon:'📝',label:'歌曲歌词',value:(D.cfg.songLyrics||'未设置')+' (点击编辑)',key:'songLyricsTL'},{icon:'📍',label:'第一次见面的地方',value:D.cfg.firstMeet,key:'firstMeet'},{icon:'☁️',label:'云端同步',value:gistToken?'✅ 已开启 (实时同步中)':'❌ 未开启 (点击设置)',key:'cloudSetup'}].map(function(f){return'<div class="info-card" onclick="eInfo(\''+f.key+'\',\''+f.label+'\')"><span class="ii">'+f.icon+'</span><div><div class="il">'+f.label+'</div><div class="iv">'+eh(f.value)+'</div></div></div>'}).join('')
 }
 function eInfo(key,label){
   if(key==='cloudSetup'){
-    if(LC_APP_ID){if(confirm('关闭云端同步？'))disableSync()}else{setupCloudSync()}
+    if(gistToken){if(confirm('关闭云端同步？'))disableSync()}else{setupCloudSync()}
     return
   }
   if(key==='songLyricsTL'){setLyrics();return}
@@ -1308,116 +1308,109 @@ function showSurprise(){
 }
 function startSurprises(){clearInterval(sTimer);sTimer=setInterval(function(){if(!document.hidden)showSurprise()},90000+Math.random()*120000)}
 
-// ===== LEANCLOUD 实时云端同步 (国内专属) =====
-// 国内访问飞速，双方填入相同的 App ID 和 App Key 即可实时同步
-// 注册地址：https://leancloud.cn (免费注册 → 创建应用 → 设置 → 应用 Keys)
-var LC_APP_ID = localStorage.getItem('love_lc_appid') || '';
-var LC_APP_KEY = localStorage.getItem('love_lc_appkey') || '';
-var lcSyncObjId = null;
-var lcRemoteVer = 0;
-var lcLocalVer = 0;
-var lcSyncing = false;
-var lcSkipPush = false;
-var lcSyncTimer = null;
-
-function lcApi(method, path, body) {
-  if (!LC_APP_ID || !LC_APP_KEY) return Promise.reject('not configured');
-  return fetch('https://' + LC_APP_ID + '.api.lncld.net/1.1' + path, {
-    method: method,
-    headers: {
-      'X-LC-Id': LC_APP_ID,
-      'X-LC-Key': LC_APP_KEY + ',master',
-      'Content-Type': 'application/json'
-    },
-    body: body ? JSON.stringify(body) : undefined
-  }).then(function(r) { return r.json(); });
-}
+// ===== GITHUB GIST 实时同步 (国内可用) =====
+// GitHub API 在国内能访问，无需额外注册
+// 需要一个 GitHub Token (gist权限)：github.com/settings/tokens
+var GIST_ID = '0a000641ef3a06f9438eaa1202c5aa4b';
+var GIST_RAW = 'https://gist.githubusercontent.com/hzx-dom/' + GIST_ID + '/raw/cloud_data.json';
+var GIST_API = 'https://api.github.com/gists/' + GIST_ID;
+var gistToken = localStorage.getItem('love_gist_token') || '';
+var gistRemoteVer = 0;
+var gistLocalVer = 0;
+var gistSyncing = false;
+var gistSkipPush = false;
+var gistSyncTimer = null;
 
 function initSync() {
   updateSyncStatus();
-  if (!LC_APP_ID || !LC_APP_KEY) return;
+  if (!gistToken) return;
 
-  // 从 LeanCloud 加载最新数据
-  lcApi('GET', '/classes/CoupleData?limit=1&order=-updatedAt').then(function(r) {
-    if (r.results && r.results.length > 0) {
-      var remote = r.results[0];
-      lcSyncObjId = remote.objectId;
-      lcRemoteVer = remote.version || 0;
-      if (lcRemoteVer > lcLocalVer && remote.data) {
+  // 从 Gist 加载最新数据
+  fetch(GIST_RAW + '?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d && d.ver && d.data && d.ver > gistRemoteVer) {
         try {
-          var nd = JSON.parse(remote.data);
+          var nd = JSON.parse(d.data);
           if (nd.cfg && nd.memories) {
             D = nd;
-            lcSkipPush = true; sv(D); lcSkipPush = false;
+            gistSkipPush = true; sv(D); gistSkipPush = false;
             refreshAll();
-            lcLocalVer = lcRemoteVer;
+            gistLocalVer = d.ver;
+            gistRemoteVer = d.ver;
             ts('☁️ 数据已同步');
           }
         } catch(e) {}
-      } else if (lcLocalVer > lcRemoteVer) {
-        pushToLC();
+      } else if (d && gistLocalVer > (d.ver || 0)) {
+        pushToGist();
       }
-    } else {
-      pushToLC();
-    }
-    updateSyncStatus();
-  }).catch(function() { updateSyncStatus(); });
+      updateSyncStatus();
+    }).catch(function() { updateSyncStatus(); });
 
-  // 每1.5秒轮询，实现近实时同步
-  if (lcSyncTimer) clearInterval(lcSyncTimer);
-  lcSyncTimer = setInterval(pullFromLC, 1500);
+  if (gistSyncTimer) clearInterval(gistSyncTimer);
+  gistSyncTimer = setInterval(pullFromGist, 1500);
 
-  // 本地变更自动推送 (跳过云端拉取的回写)
   var _origSv = sv;
   sv = function(d) {
     _origSv(d);
-    if (lcSkipPush) return;
-    lcLocalVer++;
+    if (gistSkipPush) return;
+    gistLocalVer++;
     clearTimeout(sv._pushT);
-    sv._pushT = setTimeout(pushToLC, 200);
+    sv._pushT = setTimeout(pushToGist, 200);
   };
 }
 
-function pushToLC() {
-  if (!LC_APP_ID || !LC_APP_KEY || lcSyncing) return;
-  lcSyncing = true;
-  var body = { data: JSON.stringify(D), version: lcLocalVer, updatedAt: new Date().toISOString() };
-  var method = lcSyncObjId ? 'PUT' : 'POST';
-  var path = lcSyncObjId ? '/classes/CoupleData/' + lcSyncObjId : '/classes/CoupleData';
-  lcApi(method, path, body).then(function(r) {
-    lcSyncing = false;
-    if (r.objectId && !lcSyncObjId) lcSyncObjId = r.objectId;
-    lcRemoteVer = lcLocalVer;
+function pushToGist() {
+  if (!gistToken || gistSyncing) return;
+  gistSyncing = true;
+  fetch(GIST_API, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': 'token ' + gistToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      files: {
+        'cloud_data.json': {
+          content: JSON.stringify({ ver: gistLocalVer, data: JSON.stringify(D) })
+        }
+      }
+    })
+  }).then(function() {
+    gistSyncing = false;
+    gistRemoteVer = gistLocalVer;
     updateSyncStatus();
   }).catch(function() {
-    lcSyncing = false;
+    gistSyncing = false;
     updateSyncStatus();
   });
 }
 
-function pullFromLC() {
-  if (!LC_APP_ID || !LC_APP_KEY || lcSyncing || !lcSyncObjId || document.hidden) return;
-  lcSyncing = true;
-  lcApi('GET', '/classes/CoupleData/' + lcSyncObjId).then(function(r) {
-    lcSyncing = false;
-    if (r.version && r.version > lcRemoteVer && r.data) {
-      try {
-        var nd = JSON.parse(r.data);
-        if (nd.cfg && nd.memories) {
-          D = nd;
-          lcSkipPush = true; sv(D); lcSkipPush = false;
-          refreshAll();
-          lcLocalVer = r.version;
-          lcRemoteVer = r.version;
-          ts('☁️ 对方更新了数据');
-        }
-      } catch(e) {}
-    }
-    updateSyncStatus();
-  }).catch(function() {
-    lcSyncing = false;
-    updateSyncStatus();
-  });
+function pullFromGist() {
+  if (!gistToken || gistSyncing || document.hidden) return;
+  gistSyncing = true;
+  fetch(GIST_RAW + '?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      gistSyncing = false;
+      if (d && d.ver && d.ver > gistRemoteVer && d.data) {
+        try {
+          var nd = JSON.parse(d.data);
+          if (nd.cfg && nd.memories) {
+            D = nd;
+            gistSkipPush = true; sv(D); gistSkipPush = false;
+            refreshAll();
+            gistLocalVer = d.ver;
+            gistRemoteVer = d.ver;
+            ts('☁️ 对方更新了数据');
+          }
+        } catch(e) {}
+      }
+      updateSyncStatus();
+    }).catch(function() {
+      gistSyncing = false;
+      updateSyncStatus();
+    });
 }
 
 function updateSyncStatus() {
@@ -1425,16 +1418,16 @@ function updateSyncStatus() {
   if (!dot) return;
   var stxt = document.getElementById('syncStatusText');
   var sbtn = document.getElementById('btnSyncSetup');
-  if (!LC_APP_ID || !LC_APP_KEY) {
+  if (!gistToken) {
     dot.className = 'sync-dot';
     dot.title = '点击设置云端同步';
     if(stxt) stxt.textContent = '点击下方设置实时同步';
     if(sbtn) sbtn.textContent = '☁️ 设置同步';
-  } else if (lcSyncing && !lcSyncObjId) {
+  } else if (gistSyncing && gistRemoteVer === 0) {
     dot.className = 'sync-dot connecting';
     dot.title = '首次同步中...';
     if(stxt) stxt.textContent = '正在连接云端...';
-  } else if (lcSyncObjId) {
+  } else if (gistRemoteVer > 0) {
     dot.className = 'sync-dot online';
     dot.title = '已连接 · 实时同步中';
     if(stxt) stxt.textContent = '✅ 实时同步已开启 · 双方数据自动同步';
@@ -1447,35 +1440,27 @@ function updateSyncStatus() {
 }
 
 function setupCloudSync() {
-  var appId = prompt('🔑 LeanCloud App ID：\n\n📌 在 leancloud.cn 免费注册 → 创建应用\n📌 进入「设置 → 应用 Keys」获取\n📌 双方填入相同的 App ID 和 Key\n', LC_APP_ID || '');
-  if (!appId || !appId.trim()) return;
-  var appKey = prompt('🔑 LeanCloud App Key：', LC_APP_KEY || '');
-  if (!appKey || !appKey.trim()) return;
-  LC_APP_ID = appId.trim();
-  LC_APP_KEY = appKey.trim();
-  localStorage.setItem('love_lc_appid', LC_APP_ID);
-  localStorage.setItem('love_lc_appkey', LC_APP_KEY);
-  lcSyncObjId = null;
-  lcRemoteVer = 0;
-  lcLocalVer = 0;
-  lcSyncing = false;
-  if (lcSyncTimer) clearInterval(lcSyncTimer);
+  var token = prompt('🔑 GitHub Token：\n\n📌 在 github.com/settings/tokens\n📌 点 Generate new token (classic)\n📌 只勾选 gist 权限\n📌 复制生成的 token (ghp_开头)\n📌 双方填入相同的 Token\n', gistToken || '');
+  if (!token || !token.trim()) return;
+  gistToken = token.trim();
+  localStorage.setItem('love_gist_token', gistToken);
+  gistRemoteVer = 0;
+  gistLocalVer = 0;
+  gistSyncing = false;
+  if (gistSyncTimer) clearInterval(gistSyncTimer);
   initSync();
-  ts('☁️ 同步已开启！双方填入相同信息即可实时同步');
+  ts('☁️ 同步已开启！双方填入相同 Token 即可实时同步');
   rInfo();
 }
 
 function disableSync() {
   if (!confirm('确定关闭云端同步？')) return;
-  LC_APP_ID = '';
-  LC_APP_KEY = '';
-  localStorage.removeItem('love_lc_appid');
-  localStorage.removeItem('love_lc_appkey');
-  lcSyncObjId = null;
-  lcRemoteVer = 0;
-  lcLocalVer = 0;
-  lcSyncing = false;
-  if (lcSyncTimer) clearInterval(lcSyncTimer);
+  gistToken = '';
+  localStorage.removeItem('love_gist_token');
+  gistRemoteVer = 0;
+  gistLocalVer = 0;
+  gistSyncing = false;
+  if (gistSyncTimer) clearInterval(gistSyncTimer);
   updateSyncStatus();
   ts('☁️ 同步已关闭');
   rInfo();
