@@ -24,12 +24,19 @@
   --rd: 18px; --rd-sm: 12px; --rd-lg: 24px; --rd-xl: 30px;
   --sh: 0 1px 3px rgba(74,53,53,0.04), 0 4px 12px rgba(74,53,53,0.04);
   --sh-h: 0 4px 20px rgba(74,53,53,0.08), 0 1px 3px rgba(74,53,53,0.04);
+  --btn-grad: var(--btn-grad);
+  --nav-bg: rgba(255,255,255,0.65);
 }
+/* 四季主题 */
+.theme-spring{--bg:#FFF9F7;--rose:#E8878B;--rose-d:#D4687C;--rose-l:#F2B8B5;--rose-b:#FDE7E4;--warm:#E8B4A0;--gold:#D4A090;--btn-grad:var(--btn-grad);--nav-bg:rgba(255,255,255,0.65)}
+.theme-summer{--bg:#F5FAF5;--rose:#6BAF92;--rose-d:#4A8F70;--rose-l:#8ED0B0;--rose-b:#E0F5E8;--warm:#7EC8A0;--gold:#5DA080;--btn-grad:linear-gradient(135deg,#6BAF92,#4A8F70);--nav-bg:rgba(255,255,255,0.7)}
+.theme-autumn{--bg:#FFF8F2;--rose:#E8945A;--rose-d:#D47840;--rose-l:#F0B890;--rose-b:#FDE8D5;--warm:#E8B080;--gold:#D49060;--btn-grad:linear-gradient(135deg,#E8945A,#D47840);--nav-bg:rgba(255,255,255,0.65)}
+.theme-winter{--bg:#F5F7FA;--rose:#7B9CC8;--rose-d:#5A7DA8;--rose-l:#A0BDE0;--rose-b:#E0E8F5;--warm:#90B0D0;--gold:#8098B8;--btn-grad:linear-gradient(135deg,#7B9CC8,#5A7DA8);--nav-bg:rgba(255,255,255,0.7)}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent}
 body{
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  background: linear-gradient(175deg, #FFF9F7 0%, #FFF5F2 30%, #FFF8F6 60%, #FFF6F4 100%);
+  background: linear-gradient(175deg, var(--bg) 0%, var(--rose-b) 30%, var(--bg) 60%, var(--rose-pale) 100%);
   background-attachment: fixed; color: var(--text); min-height: 100vh;
   line-height: 1.6; -webkit-font-smoothing: antialiased;
 }
@@ -65,7 +72,7 @@ body{
 }
 .nav-chip:hover{border-color:rgba(232,135,139,0.2);background:rgba(255,255,255,0.7);color:var(--text)}
 .nav-chip.active{
-  background:linear-gradient(135deg,#E8878B,#D4687C);color:#fff;border-color:transparent;
+  background:var(--btn-grad);color:#fff;border-color:transparent;
   box-shadow:0 2px 12px rgba(232,135,139,0.25);
 }
 .nav-chip-add{border-style:dashed;border-color:rgba(0,0,0,0.08);color:var(--text-l)}
@@ -92,7 +99,7 @@ body{
   cursor:pointer;letter-spacing:0.5px;font-family:inherit;transition:all .25s ease;
 }
 .btn:active{transform:scale(.94)}
-.btn-1{background:linear-gradient(135deg,#E8878B,#D4687C);color:#fff;box-shadow:0 3px 14px rgba(212,104,124,.2)}
+.btn-1{background:var(--btn-grad);color:#fff;box-shadow:0 3px 14px rgba(212,104,124,.2)}
 .btn-1:hover{box-shadow:0 6px 22px rgba(212,104,124,.35);transform:translateY(-1px)}
 .btn-2{background:rgba(255,255,255,.6);color:#E8878B;border:1.5px solid rgba(232,135,139,.15)}
 .btn-2:hover{background:rgba(232,135,139,.04);border-color:rgba(232,135,139,.3)}
@@ -175,7 +182,7 @@ body{
 .music-fab .fab-disc::after{
   content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   width:10px;height:10px;border-radius:50%;
-  background:linear-gradient(135deg,#E8878B,#D4687C);
+  background:var(--btn-grad);
   box-shadow:0 0 6px rgba(232,135,139,.5);
 }
 .music-fab.playing .fab-disc{animation:spin 2.5s linear infinite}
@@ -208,7 +215,7 @@ body{
 }
 .music-card .mc-vinyl-lg::after{
   content:'';width:14px;height:14px;border-radius:50%;
-  background:linear-gradient(135deg,#E8878B,#D4687C);
+  background:var(--btn-grad);
   box-shadow:0 0 8px rgba(232,135,139,.4);
 }
 .music-card.playing .mc-vinyl-lg{animation:spin 3s linear infinite}
@@ -238,7 +245,7 @@ body{
   transition:all .2s ease;color:var(--text);
 }
 .music-card .mc-btn-play{
-  width:44px;height:44px;background:linear-gradient(135deg,#E8878B,#D4687C);
+  width:44px;height:44px;background:var(--btn-grad);
   color:#fff;font-size:1.1rem;box-shadow:0 3px 14px rgba(212,104,124,.25);
 }
 .music-card .mc-btn-play:hover{box-shadow:0 6px 22px rgba(212,104,124,.4);transform:scale(1.05)}
@@ -810,7 +817,21 @@ body{
     </div>
   </div>
 
-  <!-- Row 3: Important Dates -->
+  
+  <!-- Zodiac Card -->
+  <div style="margin-bottom:16px">
+    <div class="bcard" style="text-align:center;padding:16px">
+      <div style="font-size:.75rem;font-weight:700;margin-bottom:6px">⭐ 星座配对</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:20px">
+        <div><span style="font-size:2rem" id="zBicon">♏</span><div style="font-size:.7rem;font-weight:700" id="zBName"></div><div style="font-size:.6rem;color:var(--text-m)" id="zBDate"></div></div>
+        <div style="text-align:center"><div style="font-size:1.5rem">💕</div><div style="font-size:.7rem;font-weight:700;color:var(--rose-d)" id="zScore"></div></div>
+        <div><span style="font-size:2rem" id="zGicon">♎</span><div style="font-size:.7rem;font-weight:700" id="zGName"></div><div style="font-size:.6rem;color:var(--text-m)" id="zGDate"></div></div>
+      </div>
+      <div style="font-size:.65rem;color:var(--text-m);margin-top:6px" id="zDesc"></div>
+    </div>
+  </div>
+
+<!-- Row 3: Important Dates -->
   <div class="full">
     <div class="sec-title">📅 重要的日子</div>
     <div class="idates-grid" id="idatesC"></div>
@@ -868,6 +889,22 @@ body{
   </div>
 </section>
 
+
+<!-- ===== CHECKLIST ===== -->
+<section class="section" id="sec-checklist">
+  <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
+    <span>📋 共享清单</span>
+    <button class="btn btn-1 btn-s" onclick="addCLItem()">➕ 添加</button>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="clCats"></div>
+  <div id="clList"></div>
+  <div class="wish-progress" style="margin-top:12px">
+    <div style="font-size:.72rem;color:var(--text-m)">📊 完成进度</div>
+    <div class="pb"><div class="pf" id="clFill" style="width:0%"></div></div>
+    <div style="font-size:.78rem;font-weight:700;color:var(--rose-l)" id="clText">0 / 0</div>
+  </div>
+</section>
+
 <!-- ===== LETTERS ===== -->
 <section class="section" id="sec-letters">
   <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
@@ -900,7 +937,7 @@ function ld(){try{var r=localStorage.getItem(SK);return r?JSON.parse(r):null}cat
 function sv(d){try{localStorage.setItem(SK,JSON.stringify(d))}catch(e){}}
 function gd(){return{cfg:JSON.parse(JSON.stringify(CFG)),memories:[],photos:[],wishes:[],letters:[],customPages:[],mapPins:[]}}
 var D = ld()||gd();
-['memories','photos','wishes','letters','customPages','mapPins'].forEach(function(k){if(!D[k])D[k]=[]});
+['memories','photos','wishes','letters','checklists','customPages','mapPins'].forEach(function(k){if(!D[k])D[k]=[]});
 if(!D.cfg)D.cfg=JSON.parse(JSON.stringify(CFG));
 // 名字迁移：旧默认值 → 真实姓名
 if(D.cfg.boy==='男孩')D.cfg.boy=CFG.boy;
@@ -923,7 +960,7 @@ function cimg(f,mw,mk){mw=mw||600;mk=mk||80;return new Promise(function(rs,rj){v
 
 // ===== NAV =====
 var curSec='sec-home';
-var BI=[{id:'sec-home',icon:'🏠',label:'首页'},{id:'sec-timeline',icon:'📝',label:'点滴'},{id:'sec-photos',icon:'🖼️',label:'相册'},{id:'sec-map',icon:'🗺️',label:'足迹'},{id:'sec-wishes',icon:'✨',label:'心愿'},{id:'sec-letters',icon:'💌',label:'情书'},{id:'sec-info',icon:'🌟',label:'我们'}];
+var BI=[{id:'sec-home',icon:'🏠',label:'首页'},{id:'sec-checklist',icon:'📋',label:'清单'},{id:'sec-timeline',icon:'📝',label:'点滴'},{id:'sec-photos',icon:'🖼️',label:'相册'},{id:'sec-map',icon:'🗺️',label:'足迹'},{id:'sec-wishes',icon:'✨',label:'心愿'},{id:'sec-letters',icon:'💌',label:'情书'},{id:'sec-info',icon:'🌟',label:'我们'}];
 
 function gAI(){var c=D.customPages.map(function(p){return{id:'sec-custom-'+p.id,icon:p.icon,label:p.title}});return BI.concat(c)}
 
@@ -931,7 +968,9 @@ function rNav(){
   var n=document.getElementById('topNavInner'),all=gAI();
   var b=n.querySelector('.top-nav-brand').outerHTML;
   all.forEach(function(x){b+='<button class="nav-chip'+(curSec===x.id?' active':'')+'" data-s="'+x.id+'"><span>'+x.icon+'</span> '+eh(x.label)+'</button>'});
-  b+='<button class="nav-chip nav-chip-add" data-s="__add__">➕ 新建</button>';
+  b+='<button class="nav-chip" data-s="sec-checklist"><span>📋</span> 清单</button>
+<button class="nav-chip" data-s="sec-theme" id="themeBtn" title="切换主题">🎨</button>
+<button class="nav-chip nav-chip-add" data-s="__add__">➕ 新建</button>';
   n.innerHTML=b;
   n.querySelectorAll('.nav-chip[data-s]').forEach(function(btn){btn.addEventListener('click',function(){if(btn.dataset.s==='__add__')addCP();else switchTab(btn.dataset.s)})});
 }
@@ -946,6 +985,8 @@ function switchTab(id){
   if(id==='sec-map')rMap();
   if(id==='sec-wishes')rWish();
   if(id==='sec-letters')rLet();
+  if(id==='sec-checklist')rCL();
+  if(id==='sec-theme')cycleTheme();
   if(id==='sec-info')rInfo();
   window.scrollTo(0,0);
 }
@@ -981,6 +1022,7 @@ function upHome(){
   var h=new Date().getHours(),g;
   if(h<6)g='夜深了，有你在梦里也是甜的 🌙';else if(h<9)g='早安，又是想你的新一天 ☀️';else if(h<12)g='上午好，今天也要开心哦 💛';else if(h<14)g='中午好，记得好好吃饭 🍚';else if(h<17)g='下午好，困了就想一想TA 🌸';else if(h<20)g='傍晚好，夕阳和你都很美 🌅';else g='晚安，愿你的梦里有我 🌙';
   document.getElementById('greet').textContent=g;
+  try{calcZodiac()}catch(e){}
   document.getElementById('sM').textContent=D.memories.length;document.getElementById('sP').textContent=D.photos.length;document.getElementById('sL').textContent=D.letters.length;
   // Today's memory
   var ts_=gts(),tm=D.memories.filter(function(m){return m.date===ts_})[0];
@@ -1294,13 +1336,14 @@ function closeLet(){document.getElementById('letModal').classList.add('hidden');
 function rInfo(){
   var c=document.getElementById('infoC'),n=new Date(),a=new Date(D.cfg.anniversary),td=db(a,n);
   var bb=nbd(D.cfg.boyBirth),gb=nbd(D.cfg.girlBirth),bd_=db(n,bb),gd_=db(n,gb);
-  c.innerHTML=[{icon:'💍',label:'纪念日',value:fd(D.cfg.anniversary)+' · '+td+' 天',key:'anniversary'},{icon:'🤵',label:'你的名字',value:D.cfg.boy,key:'boy'},{icon:'👰',label:'TA的名字',value:D.cfg.girl,key:'girl'},{icon:'🎂',label:'你的生日',value:fd(D.cfg.boyBirth)+(bd_===0?' 🎉':' · '+bd_+'天'),key:'boyBirth'},{icon:'🎂',label:'TA的生日',value:fd(D.cfg.girlBirth)+(gd_===0?' 🎉':' · '+gd_+'天'),key:'girlBirth'},{icon:'🎵',label:'我们的歌',value:D.cfg.song,key:'song'},{icon:'🔗',label:'歌曲链接',value:D.cfg.songUrl||'未设置(MP3直链)',key:'songUrl'},{icon:'📝',label:'歌曲歌词',value:(D.cfg.songLyrics||'未设置')+' (点击编辑)',key:'songLyricsTL'},{icon:'📍',label:'第一次见面的地方',value:D.cfg.firstMeet,key:'firstMeet'},{icon:'☁️',label:'云端同步',value:gistToken?'✅ 已开启 (实时同步中)':'❌ 未开启 (点击设置)',key:'cloudSetup'}].map(function(f){return'<div class="info-card" onclick="eInfo(\''+f.key+'\',\''+f.label+'\')"><span class="ii">'+f.icon+'</span><div><div class="il">'+f.label+'</div><div class="iv">'+eh(f.value)+'</div></div></div>'}).join('')
+  c.innerHTML=[{icon:'💍',label:'纪念日',value:fd(D.cfg.anniversary)+' · '+td+' 天',key:'anniversary'},{icon:'🤵',label:'你的名字',value:D.cfg.boy,key:'boy'},{icon:'👰',label:'TA的名字',value:D.cfg.girl,key:'girl'},{icon:'🎂',label:'你的生日',value:fd(D.cfg.boyBirth)+(bd_===0?' 🎉':' · '+bd_+'天'),key:'boyBirth'},{icon:'🎂',label:'TA的生日',value:fd(D.cfg.girlBirth)+(gd_===0?' 🎉':' · '+gd_+'天'),key:'girlBirth'},{icon:'🎵',label:'我们的歌',value:D.cfg.song,key:'song'},{icon:'🔗',label:'歌曲链接',value:D.cfg.songUrl||'未设置(MP3直链)',key:'songUrl'},{icon:'📝',label:'歌曲歌词',value:(D.cfg.songLyrics||'未设置')+' (点击编辑)',key:'songLyricsTL'},{icon:'🎨',label:'切换主题',value:['🌸春','🌿夏','🍂秋','❄冬'][D.cfg.theme||0],key:'themeSwitch'},{icon:'📍',label:'第一次见面的地方',value:D.cfg.firstMeet,key:'firstMeet'},{icon:'☁️',label:'云端同步',value:gistToken?'✅ 已开启 (实时同步中)':'❌ 未开启 (点击设置)',key:'cloudSetup'}].map(function(f){return'<div class="info-card" onclick="eInfo(\''+f.key+'\',\''+f.label+'\')"><span class="ii">'+f.icon+'</span><div><div class="il">'+f.label+'</div><div class="iv">'+eh(f.value)+'</div></div></div>'}).join('')
 }
 function eInfo(key,label){
   if(key==='cloudSetup'){
     if(gistToken){if(confirm('关闭云端同步？'))disableSync()}else{setupCloudSync()}
     return
   }
+  if(key==='themeSwitch'){cycleTheme();return}
   if(key==='songLyricsTL'){setLyrics();return}
   var v=prompt('编辑 '+label+'：',D.cfg[key]||'');if(v!==null){D.cfg[key]=v.trim();ps();rInfo();upHome();upTimer();ts('✅ 已更新')}
 }
@@ -1321,6 +1364,7 @@ function init(){
   document.getElementById('sec-home').classList.add('active');
   rNav();upHome();upTimer();rImpD();rMiniCal();
   try{rTL()}catch(e){};try{rPht()}catch(e){};try{rMap()}catch(e){};try{rWish()}catch(e){};try{rLet()}catch(e){};try{rInfo()}catch(e){};try{loadAvs()}catch(e){}
+  applyTheme();
   setInterval(upTimer,1000);
   setInterval(function(){var h=new Date().getHours(),g;if(h<6)g='夜深了，有你在梦里也是甜的 🌙';else if(h<9)g='早安，又是想你的新一天 ☀️';else if(h<12)g='上午好，今天也要开心哦 💛';else if(h<14)g='中午好，记得好好吃饭 🍚';else if(h<17)g='下午好，困了就想一想TA 🌸';else if(h<20)g='傍晚好，夕阳和你都很美 🌅';else g='晚安，愿你的梦里有我 🌙';var ge=document.getElementById('greet');if(ge)ge.textContent=g},60000);
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeMem();closeLet();closeLetW();closeLB();closePin()}})
@@ -1595,7 +1639,7 @@ function disableSync() {
   rInfo();
 }
 
-function refreshAll() { upHome(); upTimer(); rImpD(); rMiniCal(); rTL(); rPht(); rMap(); rWish(); rLet(); rInfo(); rNav(); }
+function refreshAll() { upHome(); upTimer(); rImpD(); rMiniCal(); rTL(); rPht(); rMap(); rWish(); rCL(); rLet(); rInfo(); rNav(); }
 
 // ===== DATA SYNC =====
 function expData(){
@@ -1658,6 +1702,94 @@ function regSW(){
     ts('✅ 安装完成！在桌面打开即可使用');
   });
 }
+
+
+// ===== 四季主题 =====
+var themeNames = ['🌸 春日粉', '🌿 夏日绿', '🍂 秋日橙', '❄️ 冬日蓝'];
+function applyTheme(){
+  var t = D.cfg.theme || 0;
+  var cls = ['theme-spring','theme-summer','theme-autumn','theme-winter'];
+  document.body.className = cls[t];
+  var tb = document.getElementById('themeBtn');
+  if(tb) tb.textContent = ['🌸','🌿','🍂','❄️'][t];
+}
+function cycleTheme(){
+  D.cfg.theme = ((D.cfg.theme||0)+1)%4;
+  applyTheme(); ps(); ts('🎨 已切换：'+themeNames[D.cfg.theme]); rInfo();
+}
+
+// ===== 星座配对 =====
+function getZodiac(m,d){ var dates=[20,19,21,20,21,22,23,23,23,24,23,22]; var signs=['♒水瓶','♓双鱼','♈白羊','♉金牛','♊双子','♋巨蟹','♌狮子','♍处女','♎天秤','♏天蝎','♐射手','♑摩羯']; return d<=dates[m]?signs[m]:signs[(m+1)%12]; }
+function getZodiacEmoji(s){ var m={'水瓶':'♒','双鱼':'♓','白羊':'♈','金牛':'♉','双子':'♊','巨蟹':'♋','狮子':'♌','处女':'♍','天秤':'♎','天蝎':'♏','射手':'♐','摩羯':'♑'}; for(var k in m) if(s.indexOf(k)>=0) return m[k]; return '⭐'; }
+function calcZodiac(){
+  var bb = D.cfg.boyBirth.split('-'), gb = D.cfg.girlBirth.split('-');
+  var bz = getZodiac(parseInt(bb[1])-1, parseInt(bb[2]));
+  var gz = getZodiac(parseInt(gb[1])-1, parseInt(gb[2]));
+  var bn = bz.slice(1), gn = gz.slice(1);
+  document.getElementById('zBicon').textContent = getZodiacEmoji(bz);
+  document.getElementById('zGicon').textContent = getZodiacEmoji(gz);
+  document.getElementById('zBName').textContent = bn;
+  document.getElementById('zGName').textContent = gn;
+  document.getElementById('zBDate').textContent = D.cfg.boyBirth;
+  document.getElementById('zGDate').textContent = D.cfg.girlBirth;
+  // 配对评分
+  var compat = { '天蝎♏双鱼♓':98,'天蝎♏巨蟹♋':96,'天蝎♏摩羯♑':92,'天蝎♏处女♍':88,'天蝎♏金牛♉':85,'天蝎♏天秤♎':80,'天蝎♏天蝎♏':78,'天蝎♏射手♐':72,'天蝎♏白羊♈':65,'天蝎♏双子♊':58,'天蝎♏狮子♌':55,'天蝎♏水瓶♒':50,'天蝎♏':80 };
+  var pair1 = bn+'♏'+gn, pair2 = gn+'♏'+bn;
+  // Search for matching pair (simplified: use predefined list)
+  var scoreMap = {'天蝎天秤':85,'天蝎摩羯':92,'天蝎射手':72,'天蝎水瓶':50,'天蝎双鱼':98,'天蝎白羊':65,'天蝎金牛':85,'天蝎双子':58,'天蝎巨蟹':96,'天蝎狮子':55,'天蝎处女':88,'天蝎天蝎':78};
+  var key = (bn < gn ? bn+gn : gn+bn);
+  var score = scoreMap[key] || 80;
+  document.getElementById('zScore').textContent = score+'分';
+  var descs = {98:'天生一对！灵魂伴侣 💘',96:'非常契合，心有灵犀 💕',92:'互相成就的完美组合 ✨',88:'彼此欣赏，细水长流 🌊',85:'性格互补，越爱越深 💗',80:'缘分不错，好好珍惜 💛',78:'相爱相杀，激情满满 🔥',72:'需要磨合，但值得 🤝',65:'相互吸引又相互挑战 ⚡',58:'需要更多理解和包容 🫂',55:'差异很大但吸引力强 💫',50:'缘分天定，重在经营 🌱'};
+  document.getElementById('zDesc').textContent = descs[score] || '甜蜜的你们就是最好的配对 💖';
+}
+
+// ===== 共享清单 =====
+var clCurCat = '';
+function rCL(cat){
+  if(typeof cat==='undefined') cat = clCurCat;
+  clCurCat = cat;
+  if(!D.checklists) D.checklists = [];
+  var items = cat ? D.checklists.filter(function(x){ return x.category===cat; }) : D.checklists;
+  var done = items.filter(function(x){ return x.done; }).length;
+  var total = items.length;
+
+  // 分类标签
+  var cats = {}; D.checklists.forEach(function(x){ var c = x.category||'其他'; cats[c]=(cats[c]||0)+1; });
+  var ch = '<button class="nav-chip'+(cat===''?' active':'')+'" onclick="rCL(\'\')">📋 全部('+D.checklists.length+')</button>';
+  Object.keys(cats).forEach(function(c){ ch += '<button class="nav-chip'+(cat===c?' active':'')+'" onclick="rCL(\''+c+'\')">'+c+'('+cats[c]+')</button>'; });
+  ch += '<button class="nav-chip nav-chip-add" onclick="var c=prompt(\'📁 新分类：\');if(c)c=c.trim();if(c){clCurCat=c;rCL(c)}">➕ 分类</button>';
+  document.getElementById('clCats').innerHTML = ch;
+
+  // 进度
+  document.getElementById('clFill').style.width = (total>0?Math.round(done/total*100):0)+'%';
+  document.getElementById('clText').textContent = done+' / '+total;
+
+  // 清单列表
+  var h = '';
+  items.forEach(function(x,i){
+    var idx = D.checklists.indexOf(x);
+    h += '<div class="wish-item'+(x.done?' done':'')+'" onclick="tCL('+idx+')">'+
+      '<div class="wc">✓</div>'+
+      '<span class="wt">'+eh(x.text)+' <span style="font-size:.6rem;color:var(--text-l)">['+(x.category||'其他')+']</span></span>'+
+      '<button class="wdel" onclick="event.stopPropagation();dCL('+idx+')">✕</button></div>';
+  });
+  document.getElementById('clList').innerHTML = h || '<div style="text-align:center;padding:30px;color:var(--text-l)"><p>还没有项目，点右上角添加吧~</p></div>';
+}
+
+function addCLItem(){
+  var t = prompt('📋 添加项目：'); if(!t||!t.trim()) return;
+  D.checklists.push({id:gId(),text:t.trim(),category:clCurCat||'其他',done:false,createdAt:new Date().toISOString()});
+  ps(); rCL(); ts('✅ 已添加');
+}
+
+function tCL(i){
+  D.checklists[i].done = !D.checklists[i].done;
+  ps(); rCL(); if(D.checklists[i].done) ts('✅ 完成！');
+}
+
+function dCL(i){ D.checklists.splice(i,1); ps(); rCL(); }
+
 </script>
 </body>
 </html>
