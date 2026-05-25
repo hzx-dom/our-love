@@ -919,7 +919,7 @@ function gts(){var n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1
 function db(d1,d2){return Math.floor((d2-d1)/86400000)}
 function nbd(b){var n=new Date(),p=b.split('-');var x=new Date(n.getFullYear(),parseInt(p[1])-1,parseInt(p[2]));if(x<n)x.setFullYear(x.getFullYear()+1);return x}
 
-function cimg(f,mw,mk){mw=mw||800;mk=mk||400;return new Promise(function(rs,rj){var r=new FileReader();r.onload=function(e){var i=new Image();i.onload=function(){var w=i.width,h=i.height;if(w>mw){h=Math.round(h*mw/w);w=mw}var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);var q=0.8,re=c.toDataURL('image/jpeg',q);while(re.length>mk*1024&&q>0.2){q-=0.1;re=c.toDataURL('image/jpeg',q)}rs(re)};i.onerror=rj;i.src=e.target.result};r.onerror=rj;r.readAsDataURL(f)})}
+function cimg(f,mw,mk){mw=mw||600;mk=mk||80;return new Promise(function(rs,rj){var r=new FileReader();r.onload=function(e){var i=new Image();i.onload=function(){var w=i.width,h=i.height;if(w>mw){h=Math.round(h*mw/w);w=mw}var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);var q=0.8,re=c.toDataURL('image/jpeg',q);while(re.length>mk*1024&&q>0.2){q-=0.1;re=c.toDataURL('image/jpeg',q)}rs(re)};i.onerror=rj;i.src=e.target.result};r.onerror=rj;r.readAsDataURL(f)})}
 
 // ===== NAV =====
 var curSec='sec-home';
@@ -1392,9 +1392,10 @@ function pushToGist() {
     gistLocalVer = newVer;
     gistRemoteVer = newVer;
     updateSyncStatus();
-  }).catch(function() {
+  }).catch(function(e) {
     gistSyncing = false;
     updateSyncStatus();
+    ts('⚠️ 同步失败，数据可能过大，请删除一些照片');
   });
 }
 
