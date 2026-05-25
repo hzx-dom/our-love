@@ -1067,8 +1067,9 @@ function rTL(){
   c.innerHTML=s.map(function(m){return'<div class="tl-card" onclick="openMem(\''+m.date+'\',\''+m.id+'\')"><div class="tld">📅 '+fd(m.date)+'</div><h4>'+(m.title||'未命名')+'</h4><div class="tlp">'+(m.content||'点击查看')+'</div>'+(m.image?'<img src="'+m.image+'" loading="lazy">':'')+'</div>'}).join('')
 }
 
-// ===== PHOTOS (存GitHub仓库，不限量) =====
+// ===== PHOTOS (存GitHub仓库，走Pages访问，不限量) =====
 var REPO_API = 'https://api.github.com/repos/hzx-dom/our-love/contents/photos/';
+var PHOTO_BASE = 'https://hzx-dom.github.io/our-love/photos/';
 
 function rPht(){
   var g=document.getElementById('pGrid'),h='';
@@ -1082,8 +1083,7 @@ function aPht(e){
   var fs=e.target.files;if(!fs.length)return;
   Array.from(fs).forEach(function(f){
     ts('📤 上传中...');
-    cimg(f, 1200, 500).then(function(dataUri){
-      // 提取base64（去掉data:image/jpeg;base64,前缀）
+    cimg(f, 1200, 300).then(function(dataUri){
       var base64 = dataUri.split(',')[1];
       var fname = Date.now()+'_'+Math.random().toString(36).slice(2,6)+'.jpg';
       return fetch(REPO_API + fname, {
@@ -1097,18 +1097,20 @@ function aPht(e){
           content: base64
         })
       }).then(function(r){ return r.json(); }).then(function(resp){
-        if(resp.content && resp.content.download_url){
+        if(resp.content){
           D.photos.push({
             id: gId(),
-            src: resp.content.download_url,
+            src: PHOTO_BASE + fname,
             _ghPath: resp.content.path,
             _ghSha: resp.content.sha,
             desc: '',
             date: new Date().toISOString().split('T')[0]
           });
-          ps(); rPht(); ts('📷 已添加');
+          ps(); rPht(); ts('📷 已添加(等几秒加载)');
+        } else if(resp.message){
+          ts('⚠️ '+resp.message);
         } else {
-          ts('⚠️ 上传失败，请确认Token包含repo权限');
+          ts('⚠️ 上传失败，Token需包含repo权限');
         }
       });
     }).catch(function(){
@@ -1121,9 +1123,8 @@ function aPht(e){
 function dPht(i){
   if(!confirm('确定删除？'))return;
   var p = D.photos[i];
-  // 尝试从仓库删除
   if(p._ghPath && p._ghSha && gistToken){
-    fetch(REPO_API.replace('contents/photos/','contents/') + p._ghPath, {
+    fetch('https://api.github.com/repos/hzx-dom/our-love/contents/' + p._ghPath, {
       method: 'DELETE',
       headers: {
         'Authorization': 'token ' + gistToken,
