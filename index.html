@@ -1309,10 +1309,9 @@ function showSurprise(){
 function startSurprises(){clearInterval(sTimer);sTimer=setInterval(function(){if(!document.hidden)showSurprise()},90000+Math.random()*120000)}
 
 // ===== GITHUB GIST 实时同步 (国内可用) =====
-// GitHub API 在国内能访问，无需额外注册
-// 需要一个 GitHub Token (gist权限)：github.com/settings/tokens
-var GIST_ID = '0a000641ef3a06f9438eaa1202c5aa4b';
-var GIST_RAW = 'https://gist.githubusercontent.com/hzx-dom/' + GIST_ID + '/raw/cloud_data.json';
+// 使用 api.github.com API（国内能访问），不走 gist.githubusercontent.com
+// 需要 GitHub Token (gist权限)：github.com/settings/tokens
+var GIST_ID = 'b53654c519034e14ca5dfc41eafe52df';
 var GIST_API = 'https://api.github.com/gists/' + GIST_ID;
 var gistToken = localStorage.getItem('love_gist_token') || '';
 var gistRemoteVer = 0;
@@ -1325,30 +1324,33 @@ function initSync() {
   updateSyncStatus();
   if (!gistToken) return;
 
-  // 从 Gist 加载最新数据
-  fetch(GIST_RAW + '?t=' + Date.now())
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d && d.ver && d.data && d.ver > gistRemoteVer) {
-        try {
-          var nd = JSON.parse(d.data);
+  fetch(GIST_API + '?t=' + Date.now(), {
+    headers: { 'Authorization': 'token ' + gistToken }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d && d.files && d.files['cloud_data.json']) {
+      try {
+        var raw = JSON.parse(d.files['cloud_data.json'].content);
+        if (raw && raw.ver && raw.data && raw.ver > gistRemoteVer) {
+          var nd = JSON.parse(raw.data);
           if (nd.cfg && nd.memories) {
             D = nd;
             gistSkipPush = true; sv(D); gistSkipPush = false;
             refreshAll();
-            gistLocalVer = d.ver;
-            gistRemoteVer = d.ver;
+            gistLocalVer = raw.ver;
+            gistRemoteVer = raw.ver;
             ts('☁️ 数据已同步');
           }
-        } catch(e) {}
-      } else if (d && gistLocalVer > (d.ver || 0)) {
-        pushToGist();
-      }
-      updateSyncStatus();
-    }).catch(function() { updateSyncStatus(); });
+        }
+      } catch(e) {}
+    }
+    if (gistLocalVer > gistRemoteVer) pushToGist();
+    updateSyncStatus();
+  }).catch(function() { updateSyncStatus(); });
 
   if (gistSyncTimer) clearInterval(gistSyncTimer);
-  gistSyncTimer = setInterval(pullFromGist, 1500);
+  gistSyncTimer = setInterval(pullFromGist, 2000);
 
   var _origSv = sv;
   sv = function(d) {
@@ -1356,7 +1358,7 @@ function initSync() {
     if (gistSkipPush) return;
     gistLocalVer++;
     clearTimeout(sv._pushT);
-    sv._pushT = setTimeout(pushToGist, 200);
+    sv._pushT = setTimeout(pushToGist, 300);
   };
 }
 
@@ -1389,28 +1391,33 @@ function pushToGist() {
 function pullFromGist() {
   if (!gistToken || gistSyncing || document.hidden) return;
   gistSyncing = true;
-  fetch(GIST_RAW + '?t=' + Date.now())
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      gistSyncing = false;
-      if (d && d.ver && d.ver > gistRemoteVer && d.data) {
-        try {
-          var nd = JSON.parse(d.data);
+  fetch(GIST_API + '?t=' + Date.now(), {
+    headers: { 'Authorization': 'token ' + gistToken }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    gistSyncing = false;
+    if (d && d.files && d.files['cloud_data.json']) {
+      try {
+        var raw = JSON.parse(d.files['cloud_data.json'].content);
+        if (raw && raw.ver && raw.ver > gistRemoteVer && raw.data) {
+          var nd = JSON.parse(raw.data);
           if (nd.cfg && nd.memories) {
             D = nd;
             gistSkipPush = true; sv(D); gistSkipPush = false;
             refreshAll();
-            gistLocalVer = d.ver;
-            gistRemoteVer = d.ver;
+            gistLocalVer = raw.ver;
+            gistRemoteVer = raw.ver;
             ts('☁️ 对方更新了数据');
           }
-        } catch(e) {}
-      }
-      updateSyncStatus();
-    }).catch(function() {
-      gistSyncing = false;
-      updateSyncStatus();
-    });
+        }
+      } catch(e) {}
+    }
+    updateSyncStatus();
+  }).catch(function() {
+    gistSyncing = false;
+    updateSyncStatus();
+  });
 }
 
 function updateSyncStatus() {
